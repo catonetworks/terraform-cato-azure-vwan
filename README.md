@@ -1,30 +1,36 @@
 # CATO IPSec Azure vWAN Terraform Module
 This Terraform module provisions an IPSec connection between CATO Cloud and Azure vWAN. It creates primary and secondary tunnels for high availability (HA) and establishes a BGP connection to enable dynamic routing.
 
-## Requirements
-This terraform module requires:
-- Two [Allocated IPs in CATO](https://support.catonetworks.com/hc/en-us/articles/4413273467153-Allocating-IP-Addresses-for-the-Account) Cloud
-- [API Key in CATO](https://support.catonetworks.com/hc/en-us/articles/4413280536081-Generating-API-Keys-for-the-Cato-API)
-- A configured vWAN and Hub
-  - Note: A VPN gateway is not required, as it will be created by the module. 
+<details>
+<summary>Creating Azure Resource Dependencies - Example</summary>
 
-## Providers
+## Creating Azure Resource Dependencies
 
-| Name                                                   | Version   |
-|--------------------------------------------------------|-----------|
-| <a name="provider_cato"></a> [cato](https://registry.terraform.io/providers/catonetworks/cato/latest)    | >= 0.0.12 |
-| <a name="provider_azure"></a> [azurerm](https://registry.terraform.io/providers/hashicorp/azurerm/latest) | >= 4.1.0  | 
+The Cato vWAN relies on an [Azure Resource Group](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/resource_group), [Azure Virtual WAN](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/virtual_wan) and [Azure Virtual Hub](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/virtual_hub) to be created in advance. 
 
-## Resources
+```hcl
+# Create Azure Resources
+resource "azurerm_resource_group" "azure-rg" {
+  location = "US East"
+  name     = "Azure_vWAN_RG"
+}
 
-| Name                                           | Type     |
-|------------------------------------------------|----------|
-| cato_allocatedIp                               | data     |
-| [cato_ipsec_site](https://registry.terraform.io/providers/catonetworks/cato/latest/docs/resources/ipsec_site)                            | resource |
-| [azurerm_public_ip](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/public_ip)                          | resource |
-| [azurerm_virtual_network_gateway](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/virtual_network_gateway)            | resource |
-| [azurerm_local_network_gateway](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/local_network_gateway)              | resource |
-| [azurerm_virtual_network_gateway_connection](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/virtual_network_gateway_connection) | resource |
+resource "azurerm_virtual_wan" "virtualwan" {
+  name                = "Azure_vWAN-virtualwan"
+  resource_group_name = azurerm_resource_group.azure-rg.name
+  location            = azurerm_resource_group.azure-rg.location
+}
+
+resource "azurerm_virtual_hub" "virtualhub" {
+  name                = "Azure_vWAN-virtualhub"
+  resource_group_name = azurerm_resource_group.azure-rg.name
+  location            = azurerm_resource_group.azure-rg.location
+  virtual_wan_id      = azurerm_virtual_wan.virtualwan.id
+  address_prefix      = "10.4.0.0/16"
+}
+
+```
+</details>
 
 ## Usage
 
@@ -54,6 +60,36 @@ module "azure-vwan" {
   cato_secondary_peering_address = "192.168.100.2"
 }
 ```
+
+
+## Requirements
+This terraform module requires:
+- Two [Allocated IPs in CATO](https://support.catonetworks.com/hc/en-us/articles/4413273467153-Allocating-IP-Addresses-for-the-Account) Cloud
+- [API Key in CATO](https://support.catonetworks.com/hc/en-us/articles/4413280536081-Generating-API-Keys-for-the-Cato-API)
+- A configured vWAN and Hub
+  - Note: A VPN gateway is not required, as it will be created by the module. 
+
+## Providers
+
+| Name                                                   | Version   |
+|--------------------------------------------------------|-----------|
+| <a name="provider_cato"></a> [cato](https://registry.terraform.io/providers/catonetworks/cato/latest)    | >= 0.0.12 |
+| <a name="provider_azure"></a> [azurerm](https://registry.terraform.io/providers/hashicorp/azurerm/latest) | >= 4.1.0  | 
+
+## Resources
+
+| Name                                           | Type     |
+|------------------------------------------------|----------|
+| cato_allocatedIp                               | data     |
+| [cato_ipsec_site](https://registry.terraform.io/providers/catonetworks/cato/latest/docs/resources/ipsec_site)                            | resource |
+| [azurerm_resource_group](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/azurerm_resource_group) | resource |
+| [azurerm_virtual_wan](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/azurerm_virtual_wan) | resource |
+| [azurerm_virtual_hub](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/azurerm_virtual_hub) | resource |
+| [azurerm_public_ip](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/public_ip)                          | resource |
+| [azurerm_virtual_network_gateway](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/virtual_network_gateway)            | resource |
+| [azurerm_local_network_gateway](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/local_network_gateway)              | resource |
+| [azurerm_virtual_network_gateway_connection](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/virtual_network_gateway_connection) | resource |
+
 
 ## Site Location Reference
 
