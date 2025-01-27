@@ -1,15 +1,15 @@
-variable "cato_baseurl" {
+variable "baseurl" {
   description = "Cato API base URL"
   type        = string
   default     = "https://api.catonetworks.com/api/v1/graphql2"
 }
 
-variable "cato_token" {
+variable "token" {
   description = "Cato API token"
   type        = string
 }
 
-variable "cato_account_id" {
+variable "account_id" {
   description = "Cato account ID"
   type        = number
 }
@@ -43,13 +43,15 @@ variable "connection_bandwidth" {
 }
 
 variable "vpn_site_primary_link_name" {
-  type    = string
-  default = "Primary site link name, example: VPN_vWAN2_Cato_Primary"
+  type        = string
+  default     = "Primary"
+  description = "Primary site link name, example: VPN_vWAN2_Cato_Primary"
 }
 
 variable "vpn_site_secondary_link_name" {
-  type    = string
-  default = "Secondary site link name, example: VPN_vWAN2_Cato_Secondary"
+  type        = string
+  default     = "secondary"
+  description = "Secondary site link name, example: VPN_vWAN2_Cato_Secondary"
 }
 
 variable "site_description" {
