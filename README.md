@@ -34,8 +34,8 @@ module "azure-vwan" {
   source                       = "catonetworks/azure-vwan/cato"
   token                        = "xxxxxxx"
   account_id                   = "xxxxxxx"
-  azure_subscription_id        = var.azure_subscription_id
-  azure_vwan_hub_id            = azurerm_virtual_hub.virtualhub.id
+  azure_subscription_id        = "abcde12345-abcd-1234-abcd-abcde12345"
+  azure_vwan_hub_id            = "/subscriptions/abcde12345-abcd-1234-abcd-abcde12345/resourceGroups/YOUR_RESOURCE_GROUP_NAME/providers/Microsoft.Network/virtualHubs/YOUR_VIRTUAL_HUB_NAME"
   site_name                    = "Azure vWAN"
   cato_site_address_cidrs      = ["10.4.0.0/16"]
   vpn_site_primary_link_name   = "VPN_vWAN2Cato_Primary"
