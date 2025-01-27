@@ -168,12 +168,12 @@ resource "cato_ipsec_site" "vwan-hub" {
       curl -k -X POST \
         -H "Accept: application/json" \
         -H "Content-Type: application/json" \
-        -H "x-API-Key: ${var.cato_token}" \
-        '${var.cato_baseurl}' \
+        -H "x-API-Key: ${var.token}" \
+        '${var.baseurl}' \
         --data '{
           "query": "mutation siteUpdateIpsecIkeV2SiteGeneralDetails($siteId: ID!, $updateIpsecIkeV2SiteGeneralDetailsInput: UpdateIpsecIkeV2SiteGeneralDetailsInput!, $accountId: ID!) { site(accountId: $accountId) { updateIpsecIkeV2SiteGeneralDetails(siteId: $siteId, input: $updateIpsecIkeV2SiteGeneralDetailsInput) { siteId localId } } }",
           "variables": {
-            "accountId": ${var.cato_account_id},
+            "accountId": ${var.account_id},
             "siteId": "${cato_ipsec_site.vwan-hub.id}",
             "updateIpsecIkeV2SiteGeneralDetailsInput": {
               "initMessage": {
@@ -197,12 +197,12 @@ resource "null_resource" "configure_bgp_connection" {
       curl -k -X POST \
         -H "Accept: application/json" \
         -H "Content-Type: application/json" \
-        -H "x-API-Key: ${var.cato_token}" \
-        '${var.cato_baseurl}' \
+        -H "x-API-Key: ${var.token}" \
+        '${var.baseurl}' \
         --data '{
           "query": "mutation addBgpPeer($accountId: ID!, $addBgpPeerInput: AddBgpPeerInput!) { site(accountId: $accountId) { addBgpPeer(input: $addBgpPeerInput) { bgpPeer { site { id } id } } } }",
           "variables": {
-            "accountId": ${var.cato_account_id},
+            "accountId": ${var.account_id},
             "siteId": "${cato_ipsec_site.vwan-hub.id}",
             "addBgpPeerInput": {
               "site": {
