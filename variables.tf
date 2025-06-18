@@ -240,7 +240,7 @@ variable "cato_bgp_md5_auth_key" {
   description = "The MD5 authentication key for BGP peering. If null, MD5 auth is disabled."
   type        = string
   # sensitive   = true
-  default     = ""
+  default = ""
 }
 
 # --- BFD Variables ---
@@ -354,14 +354,14 @@ variable "primary_connection_shared_key" {
   description = "The pre-shared key for the primary connection. If null, a random one will be generated."
   type        = string
   # sensitive   = true
-  default     = null
+  default = null
 }
 
 variable "secondary_connection_shared_key" {
   description = "The pre-shared key for the secondary connection. If null, a random one will be generated."
   type        = string
   # sensitive   = true
-  default     = null
+  default = null
 }
 
 variable "enable_ipsec_site_update" {

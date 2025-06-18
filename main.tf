@@ -195,7 +195,7 @@ resource "cato_bgp_peer" "primary" {
   } : null
 
   lifecycle {
-    ignore_changes = [summary_route,md5_auth_key]
+    ignore_changes = [summary_route]
   }
 }
 
@@ -221,7 +221,7 @@ resource "cato_bgp_peer" "secondary" {
   } : null
 
   lifecycle {
-    ignore_changes = [summary_route,md5_auth_key]
+    ignore_changes = [summary_route]
   }
 }
 

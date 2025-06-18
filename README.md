@@ -35,7 +35,6 @@ resource "azurerm_virtual_hub" "virtualhub" {
 ## Usage
 
 ```hcl
-
 terraform {
   required_providers {
     azurerm = {
@@ -72,11 +71,10 @@ variable "baseurl" {
   type        = string
 }
 
-
 variable "cato_token" {
   description = "Cato Management API Token."
   type        = string
-  sensitive   = true
+  # sensitive   = true
 }
 
 variable "cato_account_id" {
@@ -87,28 +85,22 @@ variable "cato_account_id" {
 variable "azure_subscription_id" {
   description = "The Azure Subscription ID where resources will be deployed."
   type        = string
-  default     = "d21d8fbe-3b19-4c0c-86d2-b7dd4f9b93a4"
+  default     = "xxxxxxxx-xxxx-xxxx-xxxxxxxxxxxx"
 }
 
 module "cato_azure_vwan_connection" {
-  # Assumes the module is located in a subdirectory named "cato-azure-vwan".
-  source = "../"
+  source = "catonetworks/azure-vwan/cato"
 
   # --- Provider and Authentication Variables ---
-  cato_api_token        = var.cato_token
-  cato_account_id       = var.cato_account_id
-  cato_baseurl          = var.baseurl
-  azure_subscription_id = var.azure_subscription_id
+  cato_api_token  = var.cato_token
+  cato_account_id = var.cato_account_id
+  cato_baseurl    = var.baseurl
+  # azure_subscription_id = var.azure_subscription_id
 
   # --- Azure Naming and Location Variables ---
-  azure_resource_group_name = "vWan-Azure-RG"
-  azure_vwan_name           = "Corp-vWAN"
-  azure_hub_name            = "Corp-Hub"
-
-  # --- Custom Naming ---
-  custom_vpn_gateway_name            = "my-vwan-cato-vpngw"
-  custom_vpn_site_name               = "cato-networks-vpn-site"
-  custom_vpn_gateway_connection_name = "my-vwan-cato-connection"
+  azure_resource_group_name = "networking-rg"
+  azure_vwan_name           = "my-azure-vwan"
+  azure_hub_name            = "my-azure-vwan-hub"
 
   # --- Cato Site Configuration ---
   site_name            = "Azure-VWAN-Hub-Site"
@@ -118,38 +110,22 @@ module "cato_azure_vwan_connection" {
   site_location = {
     city         = "Ashburn"
     country_code = "US"
-    state_code   = "VA"
+    state_code   = "US-VA"
     timezone     = "America/New_York"
   }
-  primary_cato_pop_ip   = "x.x.x.x" # IP of your primary allocated IP
-  secondary_cato_pop_ip = "y.y.y.y" # IP of your secondary allocated IP (or null)
+  primary_cato_pop_ip   = "x.x.x.x" # Name of your primary allocated IP
+  secondary_cato_pop_ip = "y.y.y.y" # Name of your secondary allocated IP (or null)
 
   # --- Networking and BGP Variables ---
-  bgp_enabled           = true
-  cato_asn              = 65000
-  azure_asn             = 65515
+  cato_asn              = 65000 #Private ASN for Cato Side
+  azure_asn             = 65515 #Private ASN for Azure Side
   azure_bgp_peer_weight = 10
 
   # --- BGP IP Configuration ---
   azure_primary_bgp_ip   = "169.254.21.1"
   cato_primary_bgp_ip    = "169.254.21.2"
-  azure_secondary_bgp_ip = "169.254.22.2"
+  azure_secondary_bgp_ip = "169.254.22.1"
   cato_secondary_bgp_ip  = "169.254.22.2"
-
-
-  # --- BGP Peer Configuration ---
-  cato_primary_bgp_peer_name   = "azure-primary-bgp"
-  cato_secondary_bgp_peer_name = "azure-secondary-bgp"
-
-  # --- BFD Configuration ---
-  #BFD Values based on Cato Best Practices for BFD over IPSEC
-  cato_bfd_enabled                         = true
-  cato_primary_bgp_bfd_transmit_interval   = 1000
-  cato_primary_bgp_bfd_receive_interval    = 1000
-  cato_primary_bgp_bfd_multiplier          = 5
-  cato_secondary_bgp_bfd_transmit_interval = 1000
-  cato_secondary_bgp_bfd_receive_interval  = 1000
-  cato_secondary_bgp_bfd_multiplier        = 5
 
   # --- Bandwidth ---
   downstream_bw = 1000
@@ -162,27 +138,6 @@ module "cato_azure_vwan_connection" {
     Project     = "Cato-VWAN-Integration"
     Terraform   = "true"
   }
-
-  # --- Optional: Custom PSKs ---
-  # PSKs are considered sensitive values and should not be part of a configuration file. 
-  # However for illustration, this is how we override them.
-  # primary_connection_shared_key   = "my-secure-preshared-key-1"
-  # secondary_connection_shared_key = "my-secure-preshared-key-2"
-
-  # --- Optional: Post-provisioning API Call ---
-  enable_ipsec_site_update = true # Set to true to run the terraform_data update
-
-  # --- IKEv2 Customization (Optional) ---
-  # cato_connectionMode        = "BIDIRECTIONAL"
-  # cato_identificationType    = "IPV4"
-  # Note: For bandwidth > 100Mbps, use AES GCM ciphers.
-  # cato_initMessage_cipher    = "AES_GCM_256"
-  # cato_authMessage_cipher    = "AES_GCM_256"
-  cato_initMessage_dhGroup = "DH_14_MODP2048"
-  # cato_initMessage_integrity = "SHA256"
-  # cato_initMessage_prf       = "SHA256"
-  cato_authMessage_dhGroup = "DH_14_MODP2048"
-  # cato_authMessage_integrity = "SHA256"
 }
 ```
 
@@ -304,15 +259,15 @@ No modules.
 | <a name="input_cato_asn"></a> [cato\_asn](#input\_cato\_asn) | The BGP ASN for Cato. | `number` | n/a | yes |
 | <a name="input_cato_authMessage_cipher"></a> [cato\_authMessage\_cipher](#input\_cato\_authMessage\_cipher) | Cato Phase 2 ciphers.  The SA tunnel encryption method.<br/>  Note: For sites with bandwidth > 100Mbps, use only AES\_GCM\_128 or AES\_GCM\_256. For bandwidth < 100Mbps, use AES\_CBC algorithms.<br/>  Valid options are: <br/>    AES\_CBC\_128, AES\_CBC\_256, AES\_GCM\_128, AES\_GCM\_256, AUTOMATIC, DES3\_CBC, NONE | `string` | `"AES_GCM_256"` | no |
 | <a name="input_cato_authMessage_dhGroup"></a> [cato\_authMessage\_dhGroup](#input\_cato\_authMessage\_dhGroup) | Cato Phase 2 DHGroup.  The Diffie-Hellman Group. The first number is the DH-group number, and the second number is <br/>   the corresponding prime modulus size in bits<br/>   Valid Options are: <br/>    AUTOMATIC, DH\_14\_MODP2048, DH\_15\_MODP3072, DH\_16\_MODP4096, DH\_19\_ECP256,<br/>    DH\_2\_MODP1024, DH\_20\_ECP384, DH\_21\_ECP521, DH\_5\_MODP1536, NONE | `string` | `"DH_14_MODP2048"` | no |
-| <a name="input_cato_authMessage_integrity"></a> [cato\_authMessage\_integrity](#input\_cato\_authMessage\_integrity) | Cato Phase 2 Hashing Algorithm. The algorithm used to verify the integrity and authenticity of IPsec packets.<br/>  Note: Azure requires SHA256 or SHA384 for IKE Phase 2 integrity.<br/>  Valid Options are: <br/>    AUTOMATIC<br/>    MD5<br/>    NONE<br/>    SHA1<br/>    SHA256<br/>    SHA384<br/>    SHA512 | `string` | `"SHA256"` | no |
+| <a name="input_cato_authMessage_integrity"></a> [cato\_authMessage\_integrity](#input\_cato\_authMessage\_integrity) | Cato Phase 2 Hashing Algorithm. The algorithm used to verify the integrity and authenticity of IPsec packets.<br/>  Note: Azure requires SHA256 or SHA384 for IKE Phase 2 integrity.<br/>  Valid Options are: <br/>    AUTOMATIC<br/>    MD5<br/>    NONE<br/>    SHA1<br/>    SHA256<br/>    SHA384<br/>    SHA512 | `string` | `"AUTOMATIC"` | no |
 | <a name="input_cato_baseurl"></a> [cato\_baseurl](#input\_cato\_baseurl) | The base URL for the Cato API. | `string` | `"https://api.catonetworks.com/api/v1/graphql"` | no |
 | <a name="input_cato_bfd_enabled"></a> [cato\_bfd\_enabled](#input\_cato\_bfd\_enabled) | Enable or disable BFD on the Cato BGP peer. This should only be enabled if BGP is also enabled. | `bool` | `true` | no |
-| <a name="input_cato_bgp_md5_auth_key"></a> [cato\_bgp\_md5\_auth\_key](#input\_cato\_bgp\_md5\_auth\_key) | The MD5 authentication key for BGP peering. If null, MD5 auth is disabled. | `string` | `null` | no |
+| <a name="input_cato_bgp_md5_auth_key"></a> [cato\_bgp\_md5\_auth\_key](#input\_cato\_bgp\_md5\_auth\_key) | The MD5 authentication key for BGP peering. If null, MD5 auth is disabled. | `string` | `""` | no |
 | <a name="input_cato_connectionMode"></a> [cato\_connectionMode](#input\_cato\_connectionMode) | Cato Connection Mode.  Determines the protocol for establishing the Security Association (SA) Tunnel. <br/>  Valid values are: Responder-Only Mode: Cato Cloud only responds to incoming requests by the initiator (e.g. a Firewall device) to establish a security association. <br/>  Bidirectional Mode: Both Cato Cloud and the peer device on customer site can initiate the IPSec SA establishment.<br/>  Valid Options are: <br/>    BIDIRECTIONAL<br/>    RESPONDER\_ONLY<br/>    Default to BIDIRECTIONAL | `string` | `"BIDIRECTIONAL"` | no |
 | <a name="input_cato_identificationType"></a> [cato\_identificationType](#input\_cato\_identificationType) | Cato Identification Type.  The authentication identification type used for SA authentication. When using “BIDIRECTIONAL”, it is set to “IPv4” by default. <br/>  Other methods are available in Responder mode only. <br/>  Valid Options are: <br/>    EMAIL<br/>    FQDN<br/>    IPV4<br/>    KEY\_ID<br/>    Default to IPV4 | `string` | `"IPV4"` | no |
 | <a name="input_cato_initMessage_cipher"></a> [cato\_initMessage\_cipher](#input\_cato\_initMessage\_cipher) | Cato Phase 1 ciphers.  The SA tunnel encryption method. <br/>  Note: For sites with bandwidth > 100Mbps, use only AES\_GCM\_128 or AES\_GCM\_256. For bandwidth < 100Mbps, use AES\_CBC algorithms.<br/>  Valid options are: <br/>    AES\_CBC\_128, AES\_CBC\_256, AES\_GCM\_128, AES\_GCM\_256, AUTOMATIC, DES3\_CBC, NONE | `string` | `"AES_GCM_256"` | no |
 | <a name="input_cato_initMessage_dhGroup"></a> [cato\_initMessage\_dhGroup](#input\_cato\_initMessage\_dhGroup) | Cato Phase 1 DHGroup.  The Diffie-Hellman Group. The first number is the DH-group number, and the second number is <br/>   the corresponding prime modulus size in bits<br/>   Valid Options are: <br/>    AUTOMATIC, DH\_14\_MODP2048, DH\_15\_MODP3072, DH\_16\_MODP4096, DH\_19\_ECP256,<br/>    DH\_2\_MODP1024, DH\_20\_ECP384, DH\_21\_ECP521, DH\_5\_MODP1536, NONE | `string` | `"DH_14_MODP2048"` | no |
-| <a name="input_cato_initMessage_integrity"></a> [cato\_initMessage\_integrity](#input\_cato\_initMessage\_integrity) | Cato Phase 1 Hashing Algorithm.  The algorithm used to verify the integrity and authenticity of IPsec packets<br/>   Valid Options are: <br/>    AUTOMATIC, MD5, NONE, SHA1, SHA256, SHA384, SHA512<br/>    Default to AUTOMATIC | `string` | `"SHA256"` | no |
+| <a name="input_cato_initMessage_integrity"></a> [cato\_initMessage\_integrity](#input\_cato\_initMessage\_integrity) | Cato Phase 1 Hashing Algorithm.  The algorithm used to verify the integrity and authenticity of IPsec packets<br/>   Valid Options are: <br/>    AUTOMATIC, MD5, NONE, SHA1, SHA256, SHA384, SHA512<br/>    Default to AUTOMATIC | `string` | `"AUTOMATIC"` | no |
 | <a name="input_cato_initMessage_prf"></a> [cato\_initMessage\_prf](#input\_cato\_initMessage\_prf) | Cato Phase 1 Hashing Algorithm for The Pseudo-random function (PRF) used to derive the cryptographic keys used in the SA establishment process. <br/>  Valid Options are: <br/>    AUTOMATIC, MD5, NONE, SHA1, SHA256, SHA384, SHA512<br/>    Default to AUTOMATIC | `string` | `"SHA256"` | no |
 | <a name="input_cato_local_networks"></a> [cato\_local\_networks](#input\_cato\_local\_networks) | If we aren't using BGP, we will need a list of CIDRs which live behind Cato<br/>  for more information [https://support.catonetworks.com/hc/en-us/articles/14110195123485-Working-with-the-Cato-System-Range](https://support.catonetworks.com/hc/en-us/articles/14110195123485-Working-with-the-Cato-System-Range)<br/>  Default: ["10.41.0.0/16", "10.254.254.0/24"] | `list(string)` | <pre>[<br/>  "10.41.0.0/16",<br/>  "10.254.254.0/24"<br/>]</pre> | no |
 | <a name="input_cato_primary_bgp_advertise_all_routes"></a> [cato\_primary\_bgp\_advertise\_all\_routes](#input\_cato\_primary\_bgp\_advertise\_all\_routes) | Advertise all routes from Cato to the primary peer. | `bool` | `true` | no |
