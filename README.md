@@ -99,7 +99,6 @@ module "cato_azure_vwan_connection" {
   cato_api_token  = var.cato_token
   cato_account_id = var.cato_account_id
   cato_baseurl    = var.baseurl
-  # azure_subscription_id = var.azure_subscription_id
 
   # --- Azure Naming and Location Variables ---
   azure_resource_group_name = "networking-rg"
