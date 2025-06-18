@@ -20,7 +20,6 @@
     - MD5 Authentication key (cato_bgp_md5_auth_key).
   - Configurable BFD Settings: BFD timers are now fully configurable for each peer using a bfd_settings block and dedicated variables (cato_primary_bgp_bfd_transmit_interval, etc.).
   - Tagging Support: Added a tags variable to apply a consistent set of user-defined tags to all taggable Azure resources.
-  - Structured site_location Variable: The site_location variable is now a structured object for improved type safety and user experience.
   - Variable Validation: Implemented validation blocks for all variables with a fixed set of allowed values (e.g., IKE/IPsec settings, connection modes) to provide immediate feedback on invalid configurations.
   - Module Outputs: Created a comprehensive outputs.tf file to expose the IDs, IPs, and other important attributes of the created resources.
   - azapi Provider Integration: The module now uses the azapi provider to reliably fetch Azure VPN Gateway properties that are not exposed by the azurerm provider.

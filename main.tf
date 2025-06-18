@@ -51,7 +51,7 @@ resource "azurerm_vpn_site" "cato_vpn_site" {
 
   # Primary link is always created.
   link {
-    name          = var.vpn_site_primary_link_name
+    name          = var.vpn_site_primary_link_name 
     ip_address    = var.primary_cato_pop_ip
     speed_in_mbps = var.upstream_bw # Bandwidth is symmetrical
     bgp {
@@ -79,7 +79,7 @@ resource "azurerm_vpn_gateway_connection" "cato_vpn_gateway_connection" {
   name               = var.custom_vpn_gateway_connection_name == null ? "${var.site_name}-azure-vpn-connection" : var.custom_vpn_gateway_connection_name
   vpn_gateway_id     = azurerm_vpn_gateway.cato_vpn_gateway.id
   remote_vpn_site_id = azurerm_vpn_site.cato_vpn_site.id
-
+  
   # Primary VPN link is always created.
   vpn_link {
     name             = var.vpn_site_primary_link_name
@@ -246,7 +246,7 @@ resource "terraform_data" "update_ipsec_site_details_bgp" {
 
   provisioner "local-exec" {
     command = <<EOT
-cat <<'PAYLOAD' | curl -v -s -k -X POST -H 'Accept: application/json' -H 'Content-Type: application/json' -H 'x-API-Key: ${var.cato_api_token}' '${var.cato_baseurl}' --data @-
+cat <<'PAYLOAD' | curl -s -k -X POST -H 'Accept: application/json' -H 'Content-Type: application/json' -H 'x-API-Key: ${var.cato_api_token}' '${var.cato_baseurl}' --data @-
 ${templatefile("${path.module}/templates/update_site_payload.json.tftpl", {
     account_id      = var.cato_account_id
     site_id         = cato_ipsec_site.ipsec_site.id
@@ -284,7 +284,7 @@ resource "terraform_data" "update_ipsec_site_details_nobgp" {
 
   provisioner "local-exec" {
     command = <<EOT
-cat <<'PAYLOAD' | curl -v -s -k -X POST -H 'Accept: application/json' -H 'Content-Type: application/json' -H 'x-API-Key: ${var.cato_api_token}' '${var.cato_baseurl}' --data @-
+cat <<'PAYLOAD' | curl -s -k -X POST -H 'Accept: application/json' -H 'Content-Type: application/json' -H 'x-API-Key: ${var.cato_api_token}' '${var.cato_baseurl}' --data @-
 ${templatefile("${path.module}/templates/update_site_payload_nobgp.json.tftpl", {
     account_id          = var.cato_account_id
     site_id             = cato_ipsec_site.ipsec_site.id

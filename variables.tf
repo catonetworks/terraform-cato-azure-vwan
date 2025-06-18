@@ -2,7 +2,7 @@
 variable "cato_api_token" {
   description = "The API token for the Cato Management Application."
   type        = string
-  # sensitive   = true
+  sensitive   = true
 }
 
 variable "cato_account_id" {
@@ -40,12 +40,20 @@ variable "tags" {
 variable "primary_cato_pop_ip" {
   description = "The public IP address of the primary Cato PoP. Must match the name of an allocated IP in Cato."
   type        = string
+   validation {
+    condition     = can(regex("^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$", var.primary_cato_pop_ip))
+    error_message = "The primary_cato_pop_ip value must be a valid IPv4 address."
+  }
 }
 
 variable "secondary_cato_pop_ip" {
   description = "The public IP address of the secondary Cato PoP. Must match the name of an allocated IP in Cato. If null, a secondary connection will not be configured."
   type        = string
   default     = null
+   validation {
+    condition     = can(regex("^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$", var.secondary_cato_pop_ip))
+    error_message = "The primary_cato_pop_ip value must be a valid IPv4 address."
+  }
 }
 
 variable "custom_vpn_gateway_name" {
@@ -110,23 +118,39 @@ variable "azure_bgp_peer_weight" {
 variable "azure_primary_bgp_ip" {
   description = "The BGP peering IP address for the primary Azure VPN Gateway instance. Must be in the same /30 or /31 subnet as the corresponding cato_primary_bgp_ip."
   type        = string
+  validation {
+    condition     = can(regex("^169\\.254\\.(21|22)\\.((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?))$", var.azure_primary_bgp_ip))
+    error_message = "The bgp_ip must be a valid IP address in the range 169.254.21.0 - 169.254.22.255."
+  }
 }
 
 variable "cato_primary_bgp_ip" {
   description = "The BGP peering IP address for the primary Cato link. Must be in the same /30 or /31 subnet as the corresponding azure_primary_bgp_ip."
   type        = string
+  validation {
+    condition     = can(regex("^169\\.254\\.(21|22)\\.((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?))$", var.cato_primary_bgp_ip))
+    error_message = "The bgp_ip must be a valid IP address in the range 169.254.21.0 - 169.254.22.255."
+  }
 }
 
 variable "azure_secondary_bgp_ip" {
   description = "The BGP peering IP address for the secondary Azure VPN Gateway instance. Required if secondary_cato_pop_ip is not null."
   type        = string
   default     = null
+  validation {
+    condition     = can(regex("^169\\.254\\.(21|22)\\.((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?))$", var.azure_secondary_bgp_ip))
+    error_message = "The bgp_ip must be a valid IP address in the range 169.254.21.0 - 169.254.22.255."
+  }
 }
 
 variable "cato_secondary_bgp_ip" {
   description = "The BGP peering IP address for the secondary Cato link. Required if secondary_cato_pop_ip is not null."
   type        = string
   default     = null
+  validation {
+    condition     = can(regex("^169\\.254\\.(21|22)\\.((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?))$", var.cato_secondary_bgp_ip))
+    error_message = "The bgp_ip must be a valid IP address in the range 169.254.21.0 - 169.254.22.255."
+  }
 }
 
 variable "cato_site_address_cidrs" {
@@ -239,7 +263,7 @@ variable "cato_secondary_bgp_advertise_summary_route" {
 variable "cato_bgp_md5_auth_key" {
   description = "The MD5 authentication key for BGP peering. If null, MD5 auth is disabled."
   type        = string
-  # sensitive   = true
+  sensitive   = true
   default = ""
 }
 
@@ -353,14 +377,14 @@ variable "site_location" {
 variable "primary_connection_shared_key" {
   description = "The pre-shared key for the primary connection. If null, a random one will be generated."
   type        = string
-  # sensitive   = true
+  sensitive   = true
   default = null
 }
 
 variable "secondary_connection_shared_key" {
   description = "The pre-shared key for the secondary connection. If null, a random one will be generated."
   type        = string
-  # sensitive   = true
+  sensitive   = true
   default = null
 }
 
