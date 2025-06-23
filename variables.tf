@@ -40,7 +40,7 @@ variable "tags" {
 variable "primary_cato_pop_ip" {
   description = "The public IP address of the primary Cato PoP. Must match the name of an allocated IP in Cato."
   type        = string
-   validation {
+  validation {
     condition     = can(regex("^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$", var.primary_cato_pop_ip))
     error_message = "The primary_cato_pop_ip value must be a valid IPv4 address."
   }
@@ -50,7 +50,7 @@ variable "secondary_cato_pop_ip" {
   description = "The public IP address of the secondary Cato PoP. Must match the name of an allocated IP in Cato. If null, a secondary connection will not be configured."
   type        = string
   default     = null
-   validation {
+  validation {
     condition     = can(regex("^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$", var.secondary_cato_pop_ip))
     error_message = "The primary_cato_pop_ip value must be a valid IPv4 address."
   }
@@ -264,7 +264,7 @@ variable "cato_bgp_md5_auth_key" {
   description = "The MD5 authentication key for BGP peering. If null, MD5 auth is disabled."
   type        = string
   sensitive   = true
-  default = ""
+  default     = ""
 }
 
 # --- BFD Variables ---
@@ -378,14 +378,14 @@ variable "primary_connection_shared_key" {
   description = "The pre-shared key for the primary connection. If null, a random one will be generated."
   type        = string
   sensitive   = true
-  default = null
+  default     = null
 }
 
 variable "secondary_connection_shared_key" {
   description = "The pre-shared key for the secondary connection. If null, a random one will be generated."
   type        = string
   sensitive   = true
-  default = null
+  default     = null
 }
 
 variable "enable_ipsec_site_update" {

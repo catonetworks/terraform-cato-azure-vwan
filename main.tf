@@ -51,7 +51,7 @@ resource "azurerm_vpn_site" "cato_vpn_site" {
 
   # Primary link is always created.
   link {
-    name          = var.vpn_site_primary_link_name 
+    name          = var.vpn_site_primary_link_name
     ip_address    = var.primary_cato_pop_ip
     speed_in_mbps = var.upstream_bw # Bandwidth is symmetrical
     bgp {
@@ -79,7 +79,7 @@ resource "azurerm_vpn_gateway_connection" "cato_vpn_gateway_connection" {
   name               = var.custom_vpn_gateway_connection_name == null ? "${var.site_name}-azure-vpn-connection" : var.custom_vpn_gateway_connection_name
   vpn_gateway_id     = azurerm_vpn_gateway.cato_vpn_gateway.id
   remote_vpn_site_id = azurerm_vpn_site.cato_vpn_site.id
-  
+
   # Primary VPN link is always created.
   vpn_link {
     name             = var.vpn_site_primary_link_name
@@ -137,8 +137,6 @@ resource "cato_ipsec_site" "ipsec_site" {
   ipsec = {
     primary = {
       public_cato_ip_id = data.cato_allocatedIp.primary[0].items[0].id
-      # destination_type  = var.primary_destination_type
-      # pop_location_id   = var.primary_pop_location_id
       tunnels = [
         {
           public_site_ip  = local.azure_primary_public_ip
@@ -155,8 +153,6 @@ resource "cato_ipsec_site" "ipsec_site" {
     # The secondary block is defined conditionally based on the presence of the secondary pop ip variable.
     secondary = var.secondary_cato_pop_ip != null ? {
       public_cato_ip_id = data.cato_allocatedIp.secondary[0].items[0].id
-      # destination_type  = var.secondary_destination_type
-      # pop_location_id   = var.secondary_pop_location_id
       tunnels = [
         {
           public_site_ip  = local.azure_secondary_public_ip

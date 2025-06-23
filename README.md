@@ -1,64 +1,61 @@
 # CATO IPSec Azure vWAN Terraform Module
 This Terraform module provisions an IPSec connection between CATO Cloud and Azure vWAN. It creates primary and secondary tunnels for high availability (HA) and establishes a BGP connection to enable dynamic routing.
 
-### Note: 
-This module requires that vWAN and a vWAN Hub has already been setup and is ready for use.  For more information on building the required resources, see the "Creating Azure Resource Dependencies" section below.
+### Usage Note: 
+* This module requires that vWAN and a vWAN Hub has already been setup and is ready for use.  For more information on building the required resources, see the example describing the resource creation.
 
+* Cato’s backend is API requires sequential execution with the use of terraform's `parallelism=1` flag to successfully create and update resources (like creating sites, and BGP Peers). 
 
-<details>
-<summary>Creating Azure Resource Dependencies - Example</summary>
+## Azure Resource Dependencies
 
-## Creating Azure Resource Dependencies
+The Cato vWAN relies on an [Azure Resource Group](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/resource_group), [Azure Virtual WAN](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/virtual_wan) and [Azure Virtual Hub](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/virtual_hub) to be created outside of the module call.  This is called out in the example below.
 
-The Cato vWAN relies on an [Azure Resource Group](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/resource_group), [Azure Virtual WAN](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/virtual_wan) and [Azure Virtual Hub](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/virtual_hub) to be created in advance. 
+## Timing Requirements
 
-```hcl
-# Create Azure Resources
-resource "azurerm_resource_group" "azure-rg" {
-  location = "US East"
-  name     = "Azure_vWAN_RG"
-}
+The Creation / Destruction of vWan Hubs, and VPN Gateways can take a considerable amount of time.  Depending on the amount of connections created (typically 2 connection, per hub) the module can take up to an hour to run.  It may take considerably longer if multiple module calls are defined (used for multiple regions - Example Below).
 
-resource "azurerm_virtual_wan" "virtualwan" {
-  name                = "Azure_vWAN-virtualwan"
-  resource_group_name = azurerm_resource_group.azure-rg.name
-  location            = azurerm_resource_group.azure-rg.location
-}
+General Resource Creation Timelines are below
 
-resource "azurerm_virtual_hub" "virtualhub" {
-  name                = "Azure_vWAN-virtualhub"
-  resource_group_name = azurerm_resource_group.azure-rg.name
-  location            = azurerm_resource_group.azure-rg.location
-  virtual_wan_id      = azurerm_virtual_wan.virtualwan.id
-  address_prefix      = "10.4.0.0/16"
-}
+| Resource | Time to Complete Expectation | Number of Resources Created by Module | 
+|----------|-------------------------------|--------------------------------------|
+| Azure Resource Group | < 1 Minute | Not Created in Module, See Example for more info | 
+| Azure Virtual WAN | < 1 Minute | Not Created in Module, See Example for more info 
+| Azure Virtual WAN Hub | 15 - 20 Minutes | Not Created in Module, See Example for more info 
+| Azure VPN Gateway | 30 - 45 Minutes | 1 per Module Call |
+| Azure VPN Site | < 1 Minute | 1 per Module Call | 
+| Azure VPN Connection | 1 - 5 Minutes | 1 Per Module Call | 
+| Cato IPSEC Site | < 1 Minute | 1 Per Module Call | 
+| Cato BGP Peer | < 1 Minute | 2 Per Module Call |
 
-```
-</details>
+Once the apply is completed, it may take up to 10 minutes for the IPSEC VPN tunnels to complete their first connection, BGP may take up to 10 minutes to establish after IPSEC has completed the first connection.  
+
+This is expected behavior.
 
 ## Usage
 
 ```hcl
+# Define Provider Requirements
 terraform {
   required_providers {
     azurerm = {
       source  = "hashicorp/azurerm"
-      version = "~> 4.1.0"
+      version = "~> 4.34.0"
     }
     cato = {
       source  = "CatoNetworks/cato"
-      version = "~> 0.0.24"
+      version = "~> 0.0.26"
     }
     random = {
       source = "hashicorp/random"
     }
     azapi = {
       source  = "Azure/azapi"
-      version = ">= 1.5"
+      version = "~> 2.4.0"
     }
   }
 }
 
+# Define Providers 
 provider "azurerm" {
   features {}
   subscription_id = var.azure_subscription_id
@@ -70,6 +67,7 @@ provider "cato" {
   account_id = var.cato_account_id
 }
 
+#Define Variables 
 variable "baseurl" {
   description = "Cato Management API Base URL."
   type        = string
@@ -92,7 +90,38 @@ variable "azure_subscription_id" {
   default     = "xxxxxxxx-xxxx-xxxx-xxxxxxxxxxxx"
 }
 
-module "cato_azure_vwan_connection" {
+### Example Required Resources ### 
+
+# Create Azure Resources
+resource "azurerm_resource_group" "azure-rg" {
+  location = "West Central US"
+  name     = "Azure_vWAN_RG"
+}
+
+resource "azurerm_virtual_wan" "virtualwan" {
+  name                = "Azure_vWAN-virtualwan"
+  resource_group_name = azurerm_resource_group.azure-rg.name
+  location            = azurerm_resource_group.azure-rg.location
+}
+
+resource "azurerm_virtual_hub" "virtualhub-1" {
+  name                = "Azure_vWAN-virtualhub-1"
+  resource_group_name = azurerm_resource_group.azure-rg.name
+  location            = "West Central US"
+  virtual_wan_id      = azurerm_virtual_wan.virtualwan.id
+  address_prefix      = "10.10.0.0/16"
+}
+
+resource "azurerm_virtual_hub" "virtualhub-2" {
+  name                = "Azure_vWAN-virtualhub-2"
+  resource_group_name = azurerm_resource_group.azure-rg.name
+  location            = "East US"
+  virtual_wan_id      = azurerm_virtual_wan.virtualwan.id
+  address_prefix      = "10.20.0.0/16"
+}
+
+# Module Call #1 (First Region)
+module "cato_azure_vwan_connection-1" {
   source = "catonetworks/azure-vwan/cato"
 
   # --- Provider and Authentication Variables ---
@@ -101,13 +130,13 @@ module "cato_azure_vwan_connection" {
   cato_baseurl    = var.baseurl
 
   # --- Azure Naming and Location Variables ---
-  azure_resource_group_name = "networking-rg"
-  azure_vwan_name           = "my-azure-vwan"
-  azure_hub_name            = "my-azure-vwan-hub"
+  azure_resource_group_name = "networking-rg" # or azurerm_resource_group.azure-rg.name
+  azure_vwan_name           = "my-azure-vwan" # or azurerm_virtual_wan.virtualwan.name
+  azure_hub_name            = "my-azure-vwan-hub" # or azurerm_virtual_hub.virtualhub-1.name
 
   # --- Cato Site Configuration ---
   site_name            = "Azure-VWAN-Hub-Site"
-  site_description     = "Connection to Azure VWAN Hub in East US"
+  site_description     = "Connection to Azure VWAN Hub in West Central US"
   site_type            = "CLOUD_DC"
   native_network_range = null # Let the module discover it from the hub
   site_location = {
@@ -141,7 +170,66 @@ module "cato_azure_vwan_connection" {
     Project     = "Cato-VWAN-Integration"
     Terraform   = "true"
   }
+  ## IF we build the example resources we would need a depends on: 
+  # depends_on = [azurerm_resource_group.azure-rg, azurerm_virtual_wan.virtualwan, azurerm_virtual_hub.virtualhub-1, azurerm_virtual_hub.virtualhub-2]
 }
+
+## Optional Module Call - Second Connection in Separate Region 
+module "cato_azure_vwan_connection-2" {
+  source = "catonetworks/azure-vwan/cato"
+
+  # --- Provider and Authentication Variables ---
+  cato_api_token  = var.cato_token
+  cato_account_id = var.cato_account_id
+  cato_baseurl    = var.baseurl
+
+  # --- Azure Naming and Location Variables ---
+  azure_resource_group_name = "networking-rg" # or azurerm_resource_group.azure-rg.name
+  azure_vwan_name           = "my-azure-vwan" # or azurerm_virtual_wan.virtualwan.name
+  azure_hub_name            = "my-azure-vwan-hub" # or azurerm_virtual_hub.virtualhub-2.name
+
+  # --- Cato Site Configuration ---
+  site_name            = "Azure-VWAN-Hub-Site"
+  site_description     = "Connection to Azure VWAN Hub in East US"
+  site_type            = "CLOUD_DC"
+  native_network_range = null # Let the module discover it from the hub
+  
+  #Adjust Site-Location to Azure Regions Location
+  site_location = {
+    city         = "Denver"
+    country_code = "US"
+    state_code   = "US-CO"
+    timezone     = "America/Denver"
+  }
+  primary_cato_pop_ip   = "x.x.x.x" # Name of your primary allocated IP
+  secondary_cato_pop_ip = "y.y.y.y" # Name of your secondary allocated IP (or null)
+
+  # --- Networking and BGP Variables ---
+  cato_asn              = 65000 #Private ASN for Cato Side
+  azure_asn             = 65515 #Private ASN for Azure Side
+  azure_bgp_peer_weight = 10
+
+  # --- BGP IP Configuration ---
+  azure_primary_bgp_ip   = "169.254.21.3"
+  cato_primary_bgp_ip    = "169.254.21.4"
+  azure_secondary_bgp_ip = "169.254.22.3"
+  cato_secondary_bgp_ip  = "169.254.22.4"
+
+  # --- Bandwidth ---
+  downstream_bw = 1000
+  upstream_bw   = 1000
+
+  # --- Tagging ---
+  tags = {
+    Environment = "Production"
+    Owner       = "NetworkingTeam"
+    Project     = "Cato-VWAN-Integration"
+    Terraform   = "true"
+  }
+  ## IF we build the example resources we would need a depends on 
+  # depends_on = [azurerm_resource_group.azure-rg, azurerm_virtual_wan.virtualwan, azurerm_virtual_hub.virtualhub-1, azurerm_virtual_hub.virtualhub-2]
+}
+
 ```
 
 
@@ -177,17 +265,17 @@ Apache 2 Licensed. See [LICENSE](https://github.com/catonetworks/terraform-cato-
 
 | Name | Version |
 |------|---------|
-| <a name="requirement_azapi"></a> [azapi](#requirement\_azapi) | >= 1.5 |
-| <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) | ~> 4.1.0 |
-| <a name="requirement_cato"></a> [cato](#requirement\_cato) | ~> 0.0.24 |
+| <a name="requirement_azapi"></a> [azapi](#requirement\_azapi) | ~> 2.4.0 |
+| <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) | ~> 4.34.0 |
+| <a name="requirement_cato"></a> [cato](#requirement\_cato) | ~> 0.0.26 |
 
 ## Providers
 
 | Name | Version |
 |------|---------|
-| <a name="provider_azapi"></a> [azapi](#provider\_azapi) | >= 1.5 |
-| <a name="provider_azurerm"></a> [azurerm](#provider\_azurerm) | ~> 4.1.0 |
-| <a name="provider_cato"></a> [cato](#provider\_cato) | ~> 0.0.24 |
+| <a name="provider_azapi"></a> [azapi](#provider\_azapi) | ~> 2.4.0 |
+| <a name="provider_azurerm"></a> [azurerm](#provider\_azurerm) | ~> 4.34.0 |
+| <a name="provider_cato"></a> [cato](#provider\_cato) | ~> 0.0.26 |
 | <a name="provider_random"></a> [random](#provider\_random) | n/a |
 | <a name="provider_terraform"></a> [terraform](#provider\_terraform) | n/a |
 
@@ -299,10 +387,16 @@ No modules.
 |------|-------------|
 | <a name="output_azure_primary_public_ip"></a> [azure\_primary\_public\_ip](#output\_azure\_primary\_public\_ip) | The public IP address of the primary instance of the Azure VPN Gateway. |
 | <a name="output_azure_secondary_public_ip"></a> [azure\_secondary\_public\_ip](#output\_azure\_secondary\_public\_ip) | The public IP address of the secondary instance of the Azure VPN Gateway. This will be an empty string if a secondary connection is not configured. |
+| <a name="output_azure_vpn_gateway_bgp_settings"></a> [azure\_vpn\_gateway\_bgp\_settings](#output\_azure\_vpn\_gateway\_bgp\_settings) | The BGP settings of the Azure VPN Gateway that was created. |
 | <a name="output_azure_vpn_gateway_connection_id"></a> [azure\_vpn\_gateway\_connection\_id](#output\_azure\_vpn\_gateway\_connection\_id) | The resource ID of the Azure VPN Gateway Connection. |
 | <a name="output_azure_vpn_gateway_id"></a> [azure\_vpn\_gateway\_id](#output\_azure\_vpn\_gateway\_id) | The resource ID of the Azure VPN Gateway. |
+| <a name="output_azure_vpn_gateway_ip_configuration"></a> [azure\_vpn\_gateway\_ip\_configuration](#output\_azure\_vpn\_gateway\_ip\_configuration) | The IP configuration of the Azure VPN Gateway that was created. |
+| <a name="output_azure_vpn_gateway_settings"></a> [azure\_vpn\_gateway\_settings](#output\_azure\_vpn\_gateway\_settings) | The settings of the Azure VPN Gateway that was created. |
 | <a name="output_azure_vpn_site_id"></a> [azure\_vpn\_site\_id](#output\_azure\_vpn\_site\_id) | The resource ID of the Azure VPN Site. |
 | <a name="output_cato_ipsec_site_id"></a> [cato\_ipsec\_site\_id](#output\_cato\_ipsec\_site\_id) | The ID of the Cato IPsec site that was created. |
+| <a name="output_cato_ipsec_site_name"></a> [cato\_ipsec\_site\_name](#output\_cato\_ipsec\_site\_name) | The name of the Cato IPsec site that was created. |
+| <a name="output_cato_primary_pop_ip"></a> [cato\_primary\_pop\_ip](#output\_cato\_primary\_pop\_ip) | The IP address of the primary Cato PoP that was configured. |
+| <a name="output_cato_secondary_pop_ip"></a> [cato\_secondary\_pop\_ip](#output\_cato\_secondary\_pop\_ip) | The IP address of the secondary Cato PoP that was configured. This will be an empty string if a secondary connection is not configured. |
 | <a name="output_primary_preshared_key"></a> [primary\_preshared\_key](#output\_primary\_preshared\_key) | The pre-shared key used for the primary VPN connection. This will be the generated key if one was not provided. |
 | <a name="output_secondary_preshared_key"></a> [secondary\_preshared\_key](#output\_secondary\_preshared\_key) | The pre-shared key used for the secondary VPN connection. This will be the generated key if one was not provided. |
 <!-- END_TF_DOCS -->

@@ -16,7 +16,6 @@ data "azurerm_virtual_hub" "hub" {
   resource_group_name = data.azurerm_resource_group.rg.name
 }
 
-
 # Fetch the specific primary Cato allocated IP.
 data "cato_allocatedIp" "primary" {
   count       = var.primary_cato_pop_ip != null ? 1 : 0
@@ -32,7 +31,7 @@ data "cato_allocatedIp" "secondary" {
 # Use the azapi provider to get the full details of the VPN gateway,
 # including the instance public IPs which are not exposed in the azurerm provider.
 data "azapi_resource" "vpn_gateway_details" {
-  type        = "Microsoft.Network/vpnGateways@2023-04-01"
+  type        = "Microsoft.Network/vpnGateways@2024-05-01"
   resource_id = azurerm_vpn_gateway.cato_vpn_gateway.id
 
   # This ensures the data source is read only after the gateway is fully provisioned.
