@@ -132,7 +132,7 @@ resource "cato_ipsec_site" "ipsec_site" {
   site_type            = var.site_type
   description          = var.site_description
   native_network_range = var.native_network_range == null ? data.azurerm_virtual_hub.hub.address_prefix : var.native_network_range
-  site_location        = var.site_location # Pass the object directly
+  site_location        = local.cur_site_location 
 
   ipsec = {
     primary = {

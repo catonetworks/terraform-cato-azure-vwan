@@ -139,12 +139,8 @@ module "cato_azure_vwan_connection-1" {
   site_description     = "Connection to Azure VWAN Hub in West Central US"
   site_type            = "CLOUD_DC"
   native_network_range = null # Let the module discover it from the hub
-  site_location = {
-    city         = "Ashburn"
-    country_code = "US"
-    state_code   = "US-VA"
-    timezone     = "America/New_York"
-  }
+  #Site_Location Derived from Hub Location
+  
   primary_cato_pop_ip   = "x.x.x.x" # Name of your primary allocated IP
   secondary_cato_pop_ip = "y.y.y.y" # Name of your secondary allocated IP (or null)
 
@@ -193,14 +189,8 @@ module "cato_azure_vwan_connection-2" {
   site_description     = "Connection to Azure VWAN Hub in East US"
   site_type            = "CLOUD_DC"
   native_network_range = null # Let the module discover it from the hub
-  
-  #Adjust Site-Location to Azure Regions Location
-  site_location = {
-    city         = "Denver"
-    country_code = "US"
-    state_code   = "US-CO"
-    timezone     = "America/Denver"
-  }
+  #Site_Location Derived from Hub Location
+
   primary_cato_pop_ip   = "x.x.x.x" # Name of your primary allocated IP
   secondary_cato_pop_ip = "y.y.y.y" # Name of your secondary allocated IP (or null)
 

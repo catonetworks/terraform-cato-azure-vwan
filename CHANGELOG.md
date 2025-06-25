@@ -23,9 +23,9 @@
   - Variable Validation: Implemented validation blocks for all variables with a fixed set of allowed values (e.g., IKE/IPsec settings, connection modes) to provide immediate feedback on invalid configurations.
   - Module Outputs: Created a comprehensive outputs.tf file to expose the IDs, IPs, and other important attributes of the created resources.
   - azapi Provider Integration: The module now uses the azapi provider to reliably fetch Azure VPN Gateway properties that are not exposed by the azurerm provider.
+  - Added SiteLocation configuration to derive the Site Location information from Azure Region.
 - Changed
   - Refactored cato_ipsec_site: Updated the resource to use the modern ipsec block structure with nested tunnels.
   - Refactored BGP Peer Configuration: The cato_bgp_peer resources have been updated to use the latest, more detailed attribute schema.
   - Default Cipher Update: Changed the default IKE/IPsec cipher to AES_GCM_256 to align with best practices for connections over 100Mbps.
-
 

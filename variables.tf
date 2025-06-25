@@ -359,7 +359,7 @@ variable "native_network_range" {
 }
 
 variable "site_location" {
-  description = "An object representing the site's physical location."
+  description = "Site location which is used by the Cato Socket to connect to the closest Cato PoP. If not specified, the location will be derived from the Azure region dynamicaly."
   type = object({
     city         = string
     country_code = string
@@ -367,10 +367,10 @@ variable "site_location" {
     timezone     = string
   })
   default = {
-    city         = "Ashburn"
-    country_code = "US"
-    state_code   = "VA"
-    timezone     = "America/New_York"
+    city         = null
+    country_code = null
+    state_code   = null ## Optional - for countries with states
+    timezone     = null
   }
 }
 
@@ -477,24 +477,25 @@ variable "cato_connectionMode" {
   }
 }
 
-variable "cato_identificationType" {
-  description = <<EOF
-  Cato Identification Type.  The authentication identification type used for SA authentication. When using “BIDIRECTIONAL”, it is set to “IPv4” by default. 
-  Other methods are available in Responder mode only. 
-  Valid Options are: 
-    EMAIL
-    FQDN
-    IPV4
-    KEY_ID
-    Default to IPV4
-    EOF
-  type        = string
-  default     = "IPV4"
-  validation {
-    condition     = contains(["EMAIL", "FQDN", "IPV4", "KEY_ID"], var.cato_identificationType)
-    error_message = "The identification type must be one of 'EMAIL', 'FQDN', 'IPV4', or 'KEY_ID'."
-  }
-}
+# NOT Implemented
+# variable "cato_identificationType" {
+#   description = <<EOF
+#   Cato Identification Type.  The authentication identification type used for SA authentication. When using “BIDIRECTIONAL”, it is set to “IPv4” by default. 
+#   Other methods are available in Responder mode only. 
+#   Valid Options are: 
+#     EMAIL
+#     FQDN
+#     IPV4
+#     KEY_ID
+#     Default to IPV4
+#     EOF
+#   type        = string
+#   default     = "IPV4"
+#   validation {
+#     condition     = contains(["EMAIL", "FQDN", "IPV4", "KEY_ID"], var.cato_identificationType)
+#     error_message = "The identification type must be one of 'EMAIL', 'FQDN', 'IPV4', or 'KEY_ID'."
+#   }
+# }
 
 variable "cato_initMessage_dhGroup" {
   description = <<EOF
