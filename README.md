@@ -223,6 +223,9 @@ module "cato_azure_vwan_connection-2" {
 ```
 
 ## Usage without BGP
+### Note: 
+ * Use of BGP is recommended for most deployments
+ * When using integration without BGP, you must specify subnets for the tunnel, examples are below
 ```hcl
 # Define Provider Requirements
 terraform {
