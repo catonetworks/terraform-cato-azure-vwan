@@ -101,6 +101,7 @@ variable "upstream_bw" {
 variable "cato_asn" {
   description = "The BGP ASN for Cato."
   type        = number
+  default     = null
 }
 
 variable "azure_asn" {
@@ -118,39 +119,42 @@ variable "azure_bgp_peer_weight" {
 variable "azure_primary_bgp_ip" {
   description = "The BGP peering IP address for the primary Azure VPN Gateway instance. Must be in the same /30 or /31 subnet as the corresponding cato_primary_bgp_ip."
   type        = string
-  validation {
-    condition     = can(regex("^169\\.254\\.(21|22)\\.((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?))$", var.azure_primary_bgp_ip))
-    error_message = "The bgp_ip must be a valid IP address in the range 169.254.21.0 - 169.254.22.255."
-  }
+  # validation {
+  #   condition     = can(regex("^169\\.254\\.(21|22)\\.((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?))$", var.azure_primary_bgp_ip))
+  #   error_message = "The bgp_ip must be a valid IP address in the range 169.254.21.0 - 169.254.22.255."
+  # }
+  default = null
 }
 
 variable "cato_primary_bgp_ip" {
   description = "The BGP peering IP address for the primary Cato link. Must be in the same /30 or /31 subnet as the corresponding azure_primary_bgp_ip."
   type        = string
-  validation {
-    condition     = can(regex("^169\\.254\\.(21|22)\\.((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?))$", var.cato_primary_bgp_ip))
-    error_message = "The bgp_ip must be a valid IP address in the range 169.254.21.0 - 169.254.22.255."
-  }
+  default     = null
+  # validation {
+  #   condition     = can(regex("^169\\.254\\.(21|22)\\.((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?))$", var.cato_primary_bgp_ip))
+  #   error_message = "The bgp_ip must be a valid IP address in the range 169.254.21.0 - 169.254.22.255."
+  # }
+
 }
 
 variable "azure_secondary_bgp_ip" {
   description = "The BGP peering IP address for the secondary Azure VPN Gateway instance. Required if secondary_cato_pop_ip is not null."
   type        = string
   default     = null
-  validation {
-    condition     = can(regex("^169\\.254\\.(21|22)\\.((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?))$", var.azure_secondary_bgp_ip))
-    error_message = "The bgp_ip must be a valid IP address in the range 169.254.21.0 - 169.254.22.255."
-  }
+  # validation {
+  #   condition     = can(regex("^169\\.254\\.(21|22)\\.((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?))$", var.azure_secondary_bgp_ip))
+  #   error_message = "The bgp_ip must be a valid IP address in the range 169.254.21.0 - 169.254.22.255."
+  # }
 }
 
 variable "cato_secondary_bgp_ip" {
   description = "The BGP peering IP address for the secondary Cato link. Required if secondary_cato_pop_ip is not null."
   type        = string
   default     = null
-  validation {
-    condition     = can(regex("^169\\.254\\.(21|22)\\.((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?))$", var.cato_secondary_bgp_ip))
-    error_message = "The bgp_ip must be a valid IP address in the range 169.254.21.0 - 169.254.22.255."
-  }
+  # validation {
+  #   condition     = can(regex("^169\\.254\\.(21|22)\\.((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?))$", var.cato_secondary_bgp_ip))
+  #   error_message = "The bgp_ip must be a valid IP address in the range 169.254.21.0 - 169.254.22.255."
+  # }
 }
 
 variable "cato_site_address_cidrs" {
