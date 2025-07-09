@@ -25,16 +25,19 @@ resource "azurerm_vpn_gateway" "cato_vpn_gateway" {
   resource_group_name = data.azurerm_resource_group.rg.name
   virtual_hub_id      = data.azurerm_virtual_hub.hub.id
   tags                = var.tags
-  bgp_settings {
-    asn         = var.azure_asn
-    peer_weight = var.azure_bgp_peer_weight
-    instance_0_bgp_peering_address {
-      custom_ips = [var.azure_primary_bgp_ip]
-    }
-    dynamic "instance_1_bgp_peering_address" {
-      for_each = var.azure_secondary_bgp_ip != null ? [1] : []
-      content {
-        custom_ips = [var.azure_secondary_bgp_ip]
+  dynamic "bgp_settings" {
+    for_each = var.bgp_enabled ? [1] : []
+    content {
+      asn         = var.azure_asn
+      peer_weight = var.azure_bgp_peer_weight
+      instance_0_bgp_peering_address {
+        custom_ips = [var.azure_primary_bgp_ip]
+      }
+      dynamic "instance_1_bgp_peering_address" {
+        for_each = var.azure_secondary_bgp_ip != null ? [1] : []
+        content {
+          custom_ips = [var.azure_secondary_bgp_ip]
+        }
       }
     }
   }
@@ -54,9 +57,12 @@ resource "azurerm_vpn_site" "cato_vpn_site" {
     name          = var.vpn_site_primary_link_name
     ip_address    = var.primary_cato_pop_ip
     speed_in_mbps = var.upstream_bw # Bandwidth is symmetrical
-    bgp {
-      asn             = var.cato_asn
-      peering_address = var.cato_primary_bgp_ip
+    dynamic "bgp" {
+      for_each = var.bgp_enabled ? [1] : []
+      content {
+        asn             = var.cato_asn
+        peering_address = var.cato_primary_bgp_ip
+      }
     }
   }
 
@@ -67,9 +73,12 @@ resource "azurerm_vpn_site" "cato_vpn_site" {
       name          = var.vpn_site_secondary_link_name
       ip_address    = var.secondary_cato_pop_ip
       speed_in_mbps = var.upstream_bw # Bandwidth is symmetrical
-      bgp {
-        asn             = var.cato_asn
-        peering_address = var.cato_secondary_bgp_ip
+      dynamic "bgp" {
+        for_each = var.bgp_enabled ? [1] : []
+        content {
+          asn             = var.cato_asn
+          peering_address = var.cato_secondary_bgp_ip
+        }
       }
     }
   }
@@ -132,7 +141,7 @@ resource "cato_ipsec_site" "ipsec_site" {
   site_type            = var.site_type
   description          = var.site_description
   native_network_range = var.native_network_range == null ? data.azurerm_virtual_hub.hub.address_prefix : var.native_network_range
-  site_location        = local.cur_site_location 
+  site_location        = local.cur_site_location
 
   ipsec = {
     primary = {

@@ -31,7 +31,7 @@ Once the apply is completed, it may take up to 10 minutes for the IPSEC VPN tunn
 
 This is expected behavior.
 
-## Usage
+## Usage with BGP
 
 ```hcl
 # Define Provider Requirements
@@ -222,6 +222,183 @@ module "cato_azure_vwan_connection-2" {
 
 ```
 
+## Usage without BGP
+### Note: 
+ * Use of BGP is recommended for most deployments
+ * When using integration without BGP, you must specify subnets for the tunnel, examples are below
+```hcl
+# Define Provider Requirements
+terraform {
+  required_providers {
+    azurerm = {
+      source  = "hashicorp/azurerm"
+      version = "~> 4.34.0"
+    }
+    cato = {
+      source  = "CatoNetworks/cato"
+      version = "~> 0.0.26"
+    }
+    random = {
+      source = "hashicorp/random"
+    }
+    azapi = {
+      source  = "Azure/azapi"
+      version = "~> 2.4.0"
+    }
+  }
+}
+
+# Define Providers 
+provider "azurerm" {
+  features {}
+  subscription_id = var.azure_subscription_id
+}
+
+provider "cato" {
+  baseurl    = var.baseurl
+  token      = var.cato_token
+  account_id = var.cato_account_id
+}
+
+#Define Variables 
+variable "baseurl" {
+  description = "Cato Management API Base URL."
+  type        = string
+}
+
+variable "cato_token" {
+  description = "Cato Management API Token."
+  type        = string
+  # sensitive   = true
+}
+
+variable "cato_account_id" {
+  description = "Your Cato Account ID."
+  type        = string
+}
+
+variable "azure_subscription_id" {
+  description = "The Azure Subscription ID where resources will be deployed."
+  type        = string
+  default     = "xxxxxxxx-xxxx-xxxx-xxxxxxxxxxxx"
+}
+
+### Example Required Resources ### 
+
+# Create Azure Resources
+resource "azurerm_resource_group" "azure-rg" {
+  location = "West Central US"
+  name     = "Azure_vWAN_RG"
+}
+
+resource "azurerm_virtual_wan" "virtualwan" {
+  name                = "Azure_vWAN-virtualwan"
+  resource_group_name = azurerm_resource_group.azure-rg.name
+  location            = azurerm_resource_group.azure-rg.location
+}
+
+resource "azurerm_virtual_hub" "virtualhub-1" {
+  name                = "Azure_vWAN-virtualhub-1"
+  resource_group_name = azurerm_resource_group.azure-rg.name
+  location            = "West Central US"
+  virtual_wan_id      = azurerm_virtual_wan.virtualwan.id
+  address_prefix      = "10.10.0.0/16"
+}
+
+resource "azurerm_virtual_hub" "virtualhub-2" {
+  name                = "Azure_vWAN-virtualhub-2"
+  resource_group_name = azurerm_resource_group.azure-rg.name
+  location            = "East US"
+  virtual_wan_id      = azurerm_virtual_wan.virtualwan.id
+  address_prefix      = "10.20.0.0/16"
+}
+
+# Module Call #1 (First Region)
+module "cato_azure_vwan_connection-1" {
+  source = "catonetworks/azure-vwan/cato"
+
+  # --- Provider and Authentication Variables ---
+  cato_api_token  = var.cato_token
+  cato_account_id = var.cato_account_id
+  cato_baseurl    = var.baseurl
+
+  # --- Azure Naming and Location Variables ---
+  azure_resource_group_name = "networking-rg" # or azurerm_resource_group.azure-rg.name
+  azure_vwan_name           = "my-azure-vwan" # or azurerm_virtual_wan.virtualwan.name
+  azure_hub_name            = "my-azure-vwan-hub" # or azurerm_virtual_hub.virtualhub-1.name
+
+  # --- Cato Site Configuration ---
+  site_name            = "Azure-VWAN-Hub-Site"
+  site_description     = "Connection to Azure VWAN Hub in West Central US"
+  site_type            = "CLOUD_DC"
+  native_network_range = null # Let the module discover it from the hub
+  #Site_Location Derived from Hub Location
+  
+  primary_cato_pop_ip   = "x.x.x.x" # Name of your primary allocated IP
+  secondary_cato_pop_ip = "y.y.y.y" # Name of your secondary allocated IP (or null)
+  
+  bgp_enabled = false
+  peer_networks = ["hub1:10.10.0.0/16"]
+  cato_local_networks = ["10.41.0.0/16", "10.254.254.0/24"] # Add Additional Cato Site IPs Here. 
+
+  # --- Bandwidth ---
+  downstream_bw = 1000
+  upstream_bw   = 1000
+
+  # --- Tagging ---
+  tags = {
+    Environment = "Production"
+    Owner       = "NetworkingTeam"
+    Project     = "Cato-VWAN-Integration"
+    Terraform   = "true"
+  }
+  ## IF we build the example resources we would need a depends on: 
+  # depends_on = [azurerm_resource_group.azure-rg, azurerm_virtual_wan.virtualwan, azurerm_virtual_hub.virtualhub-1, azurerm_virtual_hub.virtualhub-2]
+}
+
+## Optional Module Call - Second Connection in Separate Region 
+module "cato_azure_vwan_connection-2" {
+  source = "catonetworks/azure-vwan/cato"
+
+  # --- Provider and Authentication Variables ---
+  cato_api_token  = var.cato_token
+  cato_account_id = var.cato_account_id
+  cato_baseurl    = var.baseurl
+
+  # --- Azure Naming and Location Variables ---
+  azure_resource_group_name = "networking-rg" # or azurerm_resource_group.azure-rg.name
+  azure_vwan_name           = "my-azure-vwan" # or azurerm_virtual_wan.virtualwan.name
+  azure_hub_name            = "my-azure-vwan-hub" # or azurerm_virtual_hub.virtualhub-2.name
+
+  # --- Cato Site Configuration ---
+  site_name            = "Azure-VWAN-Hub-Site"
+  site_description     = "Connection to Azure VWAN Hub in East US"
+  site_type            = "CLOUD_DC"
+  native_network_range = null # Let the module discover it from the hub
+  #Site_Location Derived from Hub Location
+
+  primary_cato_pop_ip   = "x.x.x.x" # Name of your primary allocated IP
+  secondary_cato_pop_ip = "y.y.y.y" # Name of your secondary allocated IP (or null)
+  
+  bgp_enabled = false
+  peer_networks = ["hub2:10.20.0.0/16"]
+  cato_local_networks = ["10.41.0.0/16", "10.254.254.0/24"] # Add Additional Cato Site IPs Here. 
+
+  # --- Bandwidth ---
+  downstream_bw = 1000
+  upstream_bw   = 1000
+
+  # --- Tagging ---
+  tags = {
+    Environment = "Production"
+    Owner       = "NetworkingTeam"
+    Project     = "Cato-VWAN-Integration"
+    Terraform   = "true"
+  }
+  ## IF we build the example resources we would need a depends on 
+  # depends_on = [azurerm_resource_group.azure-rg, azurerm_virtual_wan.virtualwan, azurerm_virtual_hub.virtualhub-1, azurerm_virtual_hub.virtualhub-2]
+}
+
 
 ## Requirements
 This terraform module requires:
@@ -255,9 +432,10 @@ Apache 2 Licensed. See [LICENSE](https://github.com/catonetworks/terraform-cato-
 
 | Name | Version |
 |------|---------|
+| <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) | >= 1.4 |
 | <a name="requirement_azapi"></a> [azapi](#requirement\_azapi) | ~> 2.4.0 |
 | <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) | ~> 4.34.0 |
-| <a name="requirement_cato"></a> [cato](#requirement\_cato) | ~> 0.0.26 |
+| <a name="requirement_cato"></a> [cato](#requirement\_cato) | ~> 0.0.27 |
 
 ## Providers
 
@@ -265,7 +443,7 @@ Apache 2 Licensed. See [LICENSE](https://github.com/catonetworks/terraform-cato-
 |------|---------|
 | <a name="provider_azapi"></a> [azapi](#provider\_azapi) | ~> 2.4.0 |
 | <a name="provider_azurerm"></a> [azurerm](#provider\_azurerm) | ~> 4.34.0 |
-| <a name="provider_cato"></a> [cato](#provider\_cato) | ~> 0.0.26 |
+| <a name="provider_cato"></a> [cato](#provider\_cato) | ~> 0.0.27 |
 | <a name="provider_random"></a> [random](#provider\_random) | n/a |
 | <a name="provider_terraform"></a> [terraform](#provider\_terraform) | n/a |
 
@@ -293,6 +471,7 @@ No modules.
 | [azurerm_virtual_wan.vwan](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/data-sources/virtual_wan) | data source |
 | [cato_allocatedIp.primary](https://registry.terraform.io/providers/CatoNetworks/cato/latest/docs/data-sources/allocatedIp) | data source |
 | [cato_allocatedIp.secondary](https://registry.terraform.io/providers/CatoNetworks/cato/latest/docs/data-sources/allocatedIp) | data source |
+| [cato_siteLocation.site_location](https://registry.terraform.io/providers/CatoNetworks/cato/latest/docs/data-sources/siteLocation) | data source |
 
 ## Inputs
 
@@ -307,14 +486,14 @@ No modules.
 | <a name="input_azure_ipsec_ike_integrity"></a> [azure\_ipsec\_ike\_integrity](#input\_azure\_ipsec\_ike\_integrity) | The IKE integrity algorithm (IKE phase 2) on the Azure side. For GCMAES ciphers, this must match the cipher. | `string` | `"SHA256"` | no |
 | <a name="input_azure_ipsec_integrity"></a> [azure\_ipsec\_integrity](#input\_azure\_ipsec\_integrity) | The IPSec integrity algorithm (IKE phase 1) on the Azure side. For GCMAES ciphers, this must match the cipher. | `string` | `"GCMAES256"` | no |
 | <a name="input_azure_ipsec_pfs_group"></a> [azure\_ipsec\_pfs\_group](#input\_azure\_ipsec\_pfs\_group) | The Pfs Group used in IKE Phase 2 for the new child SA on the Azure side. | `string` | `"PFS14"` | no |
-| <a name="input_azure_primary_bgp_ip"></a> [azure\_primary\_bgp\_ip](#input\_azure\_primary\_bgp\_ip) | The BGP peering IP address for the primary Azure VPN Gateway instance. Must be in the same /30 or /31 subnet as the corresponding cato\_primary\_bgp\_ip. | `string` | n/a | yes |
+| <a name="input_azure_primary_bgp_ip"></a> [azure\_primary\_bgp\_ip](#input\_azure\_primary\_bgp\_ip) | The BGP peering IP address for the primary Azure VPN Gateway instance. Must be in the same /30 or /31 subnet as the corresponding cato\_primary\_bgp\_ip. | `string` | `null` | no |
 | <a name="input_azure_resource_group_name"></a> [azure\_resource\_group\_name](#input\_azure\_resource\_group\_name) | The name of the existing Azure Resource Group where the VWAN Hub resides. | `string` | n/a | yes |
 | <a name="input_azure_secondary_bgp_ip"></a> [azure\_secondary\_bgp\_ip](#input\_azure\_secondary\_bgp\_ip) | The BGP peering IP address for the secondary Azure VPN Gateway instance. Required if secondary\_cato\_pop\_ip is not null. | `string` | `null` | no |
 | <a name="input_azure_vwan_name"></a> [azure\_vwan\_name](#input\_azure\_vwan\_name) | The name of the existing Azure Virtual WAN. | `string` | n/a | yes |
 | <a name="input_bgp_enabled"></a> [bgp\_enabled](#input\_bgp\_enabled) | Controls BGP settings. If true, BGP peers are created and routes are propagated dynamically. If false, static routes must be provided via the 'peer\_networks' variable. | `bool` | `true` | no |
 | <a name="input_cato_account_id"></a> [cato\_account\_id](#input\_cato\_account\_id) | The Account ID for the Cato Management Application. | `string` | n/a | yes |
 | <a name="input_cato_api_token"></a> [cato\_api\_token](#input\_cato\_api\_token) | The API token for the Cato Management Application. | `string` | n/a | yes |
-| <a name="input_cato_asn"></a> [cato\_asn](#input\_cato\_asn) | The BGP ASN for Cato. | `number` | n/a | yes |
+| <a name="input_cato_asn"></a> [cato\_asn](#input\_cato\_asn) | The BGP ASN for Cato. | `number` | `null` | no |
 | <a name="input_cato_authMessage_cipher"></a> [cato\_authMessage\_cipher](#input\_cato\_authMessage\_cipher) | Cato Phase 2 ciphers.  The SA tunnel encryption method.<br/>  Note: For sites with bandwidth > 100Mbps, use only AES\_GCM\_128 or AES\_GCM\_256. For bandwidth < 100Mbps, use AES\_CBC algorithms.<br/>  Valid options are: <br/>    AES\_CBC\_128, AES\_CBC\_256, AES\_GCM\_128, AES\_GCM\_256, AUTOMATIC, DES3\_CBC, NONE | `string` | `"AES_GCM_256"` | no |
 | <a name="input_cato_authMessage_dhGroup"></a> [cato\_authMessage\_dhGroup](#input\_cato\_authMessage\_dhGroup) | Cato Phase 2 DHGroup.  The Diffie-Hellman Group. The first number is the DH-group number, and the second number is <br/>   the corresponding prime modulus size in bits<br/>   Valid Options are: <br/>    AUTOMATIC, DH\_14\_MODP2048, DH\_15\_MODP3072, DH\_16\_MODP4096, DH\_19\_ECP256,<br/>    DH\_2\_MODP1024, DH\_20\_ECP384, DH\_21\_ECP521, DH\_5\_MODP1536, NONE | `string` | `"DH_14_MODP2048"` | no |
 | <a name="input_cato_authMessage_integrity"></a> [cato\_authMessage\_integrity](#input\_cato\_authMessage\_integrity) | Cato Phase 2 Hashing Algorithm. The algorithm used to verify the integrity and authenticity of IPsec packets.<br/>  Note: Azure requires SHA256 or SHA384 for IKE Phase 2 integrity.<br/>  Valid Options are: <br/>    AUTOMATIC<br/>    MD5<br/>    NONE<br/>    SHA1<br/>    SHA256<br/>    SHA384<br/>    SHA512 | `string` | `"AUTOMATIC"` | no |
@@ -322,7 +501,6 @@ No modules.
 | <a name="input_cato_bfd_enabled"></a> [cato\_bfd\_enabled](#input\_cato\_bfd\_enabled) | Enable or disable BFD on the Cato BGP peer. This should only be enabled if BGP is also enabled. | `bool` | `true` | no |
 | <a name="input_cato_bgp_md5_auth_key"></a> [cato\_bgp\_md5\_auth\_key](#input\_cato\_bgp\_md5\_auth\_key) | The MD5 authentication key for BGP peering. If null, MD5 auth is disabled. | `string` | `""` | no |
 | <a name="input_cato_connectionMode"></a> [cato\_connectionMode](#input\_cato\_connectionMode) | Cato Connection Mode.  Determines the protocol for establishing the Security Association (SA) Tunnel. <br/>  Valid values are: Responder-Only Mode: Cato Cloud only responds to incoming requests by the initiator (e.g. a Firewall device) to establish a security association. <br/>  Bidirectional Mode: Both Cato Cloud and the peer device on customer site can initiate the IPSec SA establishment.<br/>  Valid Options are: <br/>    BIDIRECTIONAL<br/>    RESPONDER\_ONLY<br/>    Default to BIDIRECTIONAL | `string` | `"BIDIRECTIONAL"` | no |
-| <a name="input_cato_identificationType"></a> [cato\_identificationType](#input\_cato\_identificationType) | Cato Identification Type.  The authentication identification type used for SA authentication. When using “BIDIRECTIONAL”, it is set to “IPv4” by default. <br/>  Other methods are available in Responder mode only. <br/>  Valid Options are: <br/>    EMAIL<br/>    FQDN<br/>    IPV4<br/>    KEY\_ID<br/>    Default to IPV4 | `string` | `"IPV4"` | no |
 | <a name="input_cato_initMessage_cipher"></a> [cato\_initMessage\_cipher](#input\_cato\_initMessage\_cipher) | Cato Phase 1 ciphers.  The SA tunnel encryption method. <br/>  Note: For sites with bandwidth > 100Mbps, use only AES\_GCM\_128 or AES\_GCM\_256. For bandwidth < 100Mbps, use AES\_CBC algorithms.<br/>  Valid options are: <br/>    AES\_CBC\_128, AES\_CBC\_256, AES\_GCM\_128, AES\_GCM\_256, AUTOMATIC, DES3\_CBC, NONE | `string` | `"AES_GCM_256"` | no |
 | <a name="input_cato_initMessage_dhGroup"></a> [cato\_initMessage\_dhGroup](#input\_cato\_initMessage\_dhGroup) | Cato Phase 1 DHGroup.  The Diffie-Hellman Group. The first number is the DH-group number, and the second number is <br/>   the corresponding prime modulus size in bits<br/>   Valid Options are: <br/>    AUTOMATIC, DH\_14\_MODP2048, DH\_15\_MODP3072, DH\_16\_MODP4096, DH\_19\_ECP256,<br/>    DH\_2\_MODP1024, DH\_20\_ECP384, DH\_21\_ECP521, DH\_5\_MODP1536, NONE | `string` | `"DH_14_MODP2048"` | no |
 | <a name="input_cato_initMessage_integrity"></a> [cato\_initMessage\_integrity](#input\_cato\_initMessage\_integrity) | Cato Phase 1 Hashing Algorithm.  The algorithm used to verify the integrity and authenticity of IPsec packets<br/>   Valid Options are: <br/>    AUTOMATIC, MD5, NONE, SHA1, SHA256, SHA384, SHA512<br/>    Default to AUTOMATIC | `string` | `"AUTOMATIC"` | no |
@@ -335,7 +513,7 @@ No modules.
 | <a name="input_cato_primary_bgp_bfd_receive_interval"></a> [cato\_primary\_bgp\_bfd\_receive\_interval](#input\_cato\_primary\_bgp\_bfd\_receive\_interval) | The BFD receive interval in milliseconds for the primary peer. The recommended default for internet-based connections is 1000ms. | `number` | `1000` | no |
 | <a name="input_cato_primary_bgp_bfd_transmit_interval"></a> [cato\_primary\_bgp\_bfd\_transmit\_interval](#input\_cato\_primary\_bgp\_bfd\_transmit\_interval) | The BFD transmit interval in milliseconds for the primary peer. The recommended default for internet-based connections is 1000ms. | `number` | `1000` | no |
 | <a name="input_cato_primary_bgp_default_action"></a> [cato\_primary\_bgp\_default\_action](#input\_cato\_primary\_bgp\_default\_action) | The default action for the primary BGP peer, can be ACCEPT or REJECT. | `string` | `"ACCEPT"` | no |
-| <a name="input_cato_primary_bgp_ip"></a> [cato\_primary\_bgp\_ip](#input\_cato\_primary\_bgp\_ip) | The BGP peering IP address for the primary Cato link. Must be in the same /30 or /31 subnet as the corresponding azure\_primary\_bgp\_ip. | `string` | n/a | yes |
+| <a name="input_cato_primary_bgp_ip"></a> [cato\_primary\_bgp\_ip](#input\_cato\_primary\_bgp\_ip) | The BGP peering IP address for the primary Cato link. Must be in the same /30 or /31 subnet as the corresponding azure\_primary\_bgp\_ip. | `string` | `null` | no |
 | <a name="input_cato_primary_bgp_metric"></a> [cato\_primary\_bgp\_metric](#input\_cato\_primary\_bgp\_metric) | The BGP metric for the primary peer. | `number` | `100` | no |
 | <a name="input_cato_primary_bgp_peer_name"></a> [cato\_primary\_bgp\_peer\_name](#input\_cato\_primary\_bgp\_peer\_name) | Name for the primary BGP peer in Cato. | `string` | `"Azure-Primary-BGP-Peer"` | no |
 | <a name="input_cato_secondary_bgp_advertise_all_routes"></a> [cato\_secondary\_bgp\_advertise\_all\_routes](#input\_cato\_secondary\_bgp\_advertise\_all\_routes) | Advertise all routes from Cato to the secondary peer. | `bool` | `true` | no |
@@ -363,7 +541,7 @@ No modules.
 | <a name="input_secondary_cato_pop_ip"></a> [secondary\_cato\_pop\_ip](#input\_secondary\_cato\_pop\_ip) | The public IP address of the secondary Cato PoP. Must match the name of an allocated IP in Cato. If null, a secondary connection will not be configured. | `string` | `null` | no |
 | <a name="input_secondary_connection_shared_key"></a> [secondary\_connection\_shared\_key](#input\_secondary\_connection\_shared\_key) | The pre-shared key for the secondary connection. If null, a random one will be generated. | `string` | `null` | no |
 | <a name="input_site_description"></a> [site\_description](#input\_site\_description) | A description for the site in the Cato Management Application. | `string` | `"Azure VWAN Hub Connection"` | no |
-| <a name="input_site_location"></a> [site\_location](#input\_site\_location) | An object representing the site's physical location. | <pre>object({<br/>    city         = string<br/>    country_code = string<br/>    state_code   = string<br/>    timezone     = string<br/>  })</pre> | <pre>{<br/>  "city": "Ashburn",<br/>  "country_code": "US",<br/>  "state_code": "VA",<br/>  "timezone": "America/New_York"<br/>}</pre> | no |
+| <a name="input_site_location"></a> [site\_location](#input\_site\_location) | Site location which is used by the Cato Socket to connect to the closest Cato PoP. If not specified, the location will be derived from the Azure region dynamicaly. | <pre>object({<br/>    city         = string<br/>    country_code = string<br/>    state_code   = string<br/>    timezone     = string<br/>  })</pre> | <pre>{<br/>  "city": null,<br/>  "country_code": null,<br/>  "state_code": null,<br/>  "timezone": null<br/>}</pre> | no |
 | <a name="input_site_name"></a> [site\_name](#input\_site\_name) | The name of the site in the Cato Management Application. | `string` | n/a | yes |
 | <a name="input_site_type"></a> [site\_type](#input\_site\_type) | The type of the site in Cato (e.g., CLOUD\_DC). | `string` | `"CLOUD_DC"` | no |
 | <a name="input_tags"></a> [tags](#input\_tags) | A map of tags to apply to all taggable Azure resources. | `map(string)` | `{}` | no |

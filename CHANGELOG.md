@@ -29,3 +29,12 @@
   - Refactored BGP Peer Configuration: The cato_bgp_peer resources have been updated to use the latest, more detailed attribute schema.
   - Default Cipher Update: Changed the default IKE/IPsec cipher to AES_GCM_256 to align with best practices for connections over 100Mbps.
 
+## 0.1.1 (2025-07-08)
+- Fixed 
+  - Found issue when BGP is disabled, certain variables are still required - Set these variables to optional 
+  - Found issue with Certain conditional statements when BGP is disabled - Adjusted to be correct 
+
+- Added 
+  - Added Examples for usage without BGP 
+
+
