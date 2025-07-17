@@ -435,7 +435,7 @@ Apache 2 Licensed. See [LICENSE](https://github.com/catonetworks/terraform-cato-
 | <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) | >= 1.4 |
 | <a name="requirement_azapi"></a> [azapi](#requirement\_azapi) | ~> 2.4.0 |
 | <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) | ~> 4.34.0 |
-| <a name="requirement_cato"></a> [cato](#requirement\_cato) | ~> 0.0.27 |
+| <a name="requirement_cato"></a> [cato](#requirement\_cato) | >= 0.0.30 |
 
 ## Providers
 
@@ -443,7 +443,7 @@ Apache 2 Licensed. See [LICENSE](https://github.com/catonetworks/terraform-cato-
 |------|---------|
 | <a name="provider_azapi"></a> [azapi](#provider\_azapi) | ~> 2.4.0 |
 | <a name="provider_azurerm"></a> [azurerm](#provider\_azurerm) | ~> 4.34.0 |
-| <a name="provider_cato"></a> [cato](#provider\_cato) | ~> 0.0.27 |
+| <a name="provider_cato"></a> [cato](#provider\_cato) | >= 0.0.30 |
 | <a name="provider_random"></a> [random](#provider\_random) | n/a |
 | <a name="provider_terraform"></a> [terraform](#provider\_terraform) | n/a |
 
@@ -567,4 +567,5 @@ No modules.
 | <a name="output_cato_secondary_pop_ip"></a> [cato\_secondary\_pop\_ip](#output\_cato\_secondary\_pop\_ip) | The IP address of the secondary Cato PoP that was configured. This will be an empty string if a secondary connection is not configured. |
 | <a name="output_primary_preshared_key"></a> [primary\_preshared\_key](#output\_primary\_preshared\_key) | The pre-shared key used for the primary VPN connection. This will be the generated key if one was not provided. |
 | <a name="output_secondary_preshared_key"></a> [secondary\_preshared\_key](#output\_secondary\_preshared\_key) | The pre-shared key used for the secondary VPN connection. This will be the generated key if one was not provided. |
+| <a name="output_site_location"></a> [site\_location](#output\_site\_location) | n/a |
 <!-- END_TF_DOCS -->

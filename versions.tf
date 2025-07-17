@@ -6,7 +6,7 @@ terraform {
     }
     cato = {
       source  = "CatoNetworks/cato"
-      version = "~> 0.0.27" # Use a version compatible with the module
+      version = ">= 0.0.30" # Use a version compatible with the module
     }
     random = {
       source = "hashicorp/random"
