@@ -37,4 +37,8 @@
 - Added 
   - Added Examples for usage without BGP 
 
+## 0.1.2 (2025-07-17)
+- Updated
+  - Updated Site Location (v0.0.2)
+  - Version locked Cato provider to 0.0.30 or greater
 
