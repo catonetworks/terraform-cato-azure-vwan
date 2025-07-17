@@ -42,3 +42,7 @@
   - Updated Site Location (v0.0.2)
   - Version locked Cato provider to 0.0.30 or greater
 
+## 0.1.3 (2025-07-17)
+
+### Features
+- Fix Malformed site_location.tf
