@@ -46,3 +46,9 @@
 
 ### Features
 - Fix Malformed site_location.tf
+
+
+## 0.1.4 (2025-07-18)
+
+### Features 
+- Update Site_Location
