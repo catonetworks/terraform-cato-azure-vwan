@@ -52,3 +52,8 @@
 
 ### Features 
 - Update Site_Location
+
+## 0.1.5 (2025-09-24)
+
+### Features 
+- Updated provider version lock to ~> 4.37.0
