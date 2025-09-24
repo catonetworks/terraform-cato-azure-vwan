@@ -2,11 +2,11 @@ terraform {
   required_providers {
     azurerm = {
       source  = "hashicorp/azurerm"
-      version = "~> 4.34.0"
+      version = "~> 4.37.0"
     }
     cato = {
       source  = "CatoNetworks/cato"
-      version = ">= 0.0.30" # Use a version compatible with the module
+      version = ">= 0.0.42" # Use a version compatible with the module
     }
     random = {
       source = "hashicorp/random"
