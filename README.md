@@ -42,8 +42,8 @@ terraform {
       version = "~> 4.34.0"
     }
     cato = {
-      source  = "CatoNetworks/cato"
-      version = "~> 0.0.26"
+      source  = "catonetworks/cato"
+      version = ">= 0.0.70"
     }
     random = {
       source = "hashicorp/random"
@@ -235,8 +235,8 @@ terraform {
       version = "~> 4.34.0"
     }
     cato = {
-      source  = "CatoNetworks/cato"
-      version = "~> 0.0.26"
+      source  = "catonetworks/cato"
+      version = ">= 0.0.70"
     }
     random = {
       source = "hashicorp/random"
@@ -412,8 +412,8 @@ For more information on site_location syntax, use the [Cato CLI](https://github.
 
 ```bash
 $ pip3 install catocli
-$ export CATO_TOKEN="your-api-token-here"
-$ export CATO_ACCOUNT_ID="your-account-id"
+$ export TF_VAR_CATO_TOKEN="your-api-token-here"
+$ export TF_VAR_CATO_ACCOUNT_ID="your-account-id"
 $ catocli query siteLocation -h
 $ catocli query siteLocation '{"filters":[{"search": "San Diego","field":"city","operation":"exact"}]}' -p
 ```
@@ -431,19 +431,19 @@ Apache 2 Licensed. See [LICENSE](https://github.com/catonetworks/terraform-cato-
 ## Requirements
 
 | Name | Version |
-|------|---------|
-| <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) | >= 1.4 |
+| ---- | ------- |
+| <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) | >= 1.5 |
 | <a name="requirement_azapi"></a> [azapi](#requirement\_azapi) | ~> 2.4.0 |
 | <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) | ~> 4.37.0 |
-| <a name="requirement_cato"></a> [cato](#requirement\_cato) | >= 0.0.42 |
+| <a name="requirement_cato"></a> [cato](#requirement\_cato) | >= 0.0.70 |
 
 ## Providers
 
 | Name | Version |
-|------|---------|
+| ---- | ------- |
 | <a name="provider_azapi"></a> [azapi](#provider\_azapi) | ~> 2.4.0 |
 | <a name="provider_azurerm"></a> [azurerm](#provider\_azurerm) | ~> 4.37.0 |
-| <a name="provider_cato"></a> [cato](#provider\_cato) | >= 0.0.42 |
+| <a name="provider_cato"></a> [cato](#provider\_cato) | >= 0.0.70 |
 | <a name="provider_random"></a> [random](#provider\_random) | n/a |
 | <a name="provider_terraform"></a> [terraform](#provider\_terraform) | n/a |
 
@@ -454,13 +454,13 @@ No modules.
 ## Resources
 
 | Name | Type |
-|------|------|
+| ---- | ---- |
 | [azurerm_vpn_gateway.cato_vpn_gateway](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/vpn_gateway) | resource |
 | [azurerm_vpn_gateway_connection.cato_vpn_gateway_connection](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/vpn_gateway_connection) | resource |
 | [azurerm_vpn_site.cato_vpn_site](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/vpn_site) | resource |
-| [cato_bgp_peer.primary](https://registry.terraform.io/providers/CatoNetworks/cato/latest/docs/resources/bgp_peer) | resource |
-| [cato_bgp_peer.secondary](https://registry.terraform.io/providers/CatoNetworks/cato/latest/docs/resources/bgp_peer) | resource |
-| [cato_ipsec_site.ipsec_site](https://registry.terraform.io/providers/CatoNetworks/cato/latest/docs/resources/ipsec_site) | resource |
+| [cato_bgp_peer.primary](https://registry.terraform.io/providers/catonetworks/cato/latest/docs/resources/bgp_peer) | resource |
+| [cato_bgp_peer.secondary](https://registry.terraform.io/providers/catonetworks/cato/latest/docs/resources/bgp_peer) | resource |
+| [cato_ipsec_site.ipsec_site](https://registry.terraform.io/providers/catonetworks/cato/latest/docs/resources/ipsec_site) | resource |
 | [random_password.shared_key_primary](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/password) | resource |
 | [random_password.shared_key_secondary](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/password) | resource |
 | [terraform_data.update_ipsec_site_details_bgp](https://registry.terraform.io/providers/hashicorp/terraform/latest/docs/resources/data) | resource |
@@ -469,14 +469,14 @@ No modules.
 | [azurerm_resource_group.rg](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/data-sources/resource_group) | data source |
 | [azurerm_virtual_hub.hub](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/data-sources/virtual_hub) | data source |
 | [azurerm_virtual_wan.vwan](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/data-sources/virtual_wan) | data source |
-| [cato_allocatedIp.primary](https://registry.terraform.io/providers/CatoNetworks/cato/latest/docs/data-sources/allocatedIp) | data source |
-| [cato_allocatedIp.secondary](https://registry.terraform.io/providers/CatoNetworks/cato/latest/docs/data-sources/allocatedIp) | data source |
-| [cato_siteLocation.site_location](https://registry.terraform.io/providers/CatoNetworks/cato/latest/docs/data-sources/siteLocation) | data source |
+| [cato_allocatedIp.primary](https://registry.terraform.io/providers/catonetworks/cato/latest/docs/data-sources/allocatedIp) | data source |
+| [cato_allocatedIp.secondary](https://registry.terraform.io/providers/catonetworks/cato/latest/docs/data-sources/allocatedIp) | data source |
+| [cato_siteLocation.site_location](https://registry.terraform.io/providers/catonetworks/cato/latest/docs/data-sources/siteLocation) | data source |
 
 ## Inputs
 
 | Name | Description | Type | Default | Required |
-|------|-------------|------|---------|:--------:|
+| ---- | ----------- | ---- | ------- | :------: |
 | <a name="input_azure_asn"></a> [azure\_asn](#input\_azure\_asn) | The BGP ASN for the Azure VPN Gateway. | `number` | `65515` | no |
 | <a name="input_azure_bgp_peer_weight"></a> [azure\_bgp\_peer\_weight](#input\_azure\_bgp\_peer\_weight) | The BGP peer weight for the Azure VPN Gateway. | `number` | `0` | no |
 | <a name="input_azure_hub_name"></a> [azure\_hub\_name](#input\_azure\_hub\_name) | The name of the existing Azure Virtual Hub. | `string` | n/a | yes |
@@ -552,7 +552,7 @@ No modules.
 ## Outputs
 
 | Name | Description |
-|------|-------------|
+| ---- | ----------- |
 | <a name="output_azure_primary_public_ip"></a> [azure\_primary\_public\_ip](#output\_azure\_primary\_public\_ip) | The public IP address of the primary instance of the Azure VPN Gateway. |
 | <a name="output_azure_secondary_public_ip"></a> [azure\_secondary\_public\_ip](#output\_azure\_secondary\_public\_ip) | The public IP address of the secondary instance of the Azure VPN Gateway. This will be an empty string if a secondary connection is not configured. |
 | <a name="output_azure_vpn_gateway_bgp_settings"></a> [azure\_vpn\_gateway\_bgp\_settings](#output\_azure\_vpn\_gateway\_bgp\_settings) | The BGP settings of the Azure VPN Gateway that was created. |
@@ -569,3 +569,4 @@ No modules.
 | <a name="output_secondary_preshared_key"></a> [secondary\_preshared\_key](#output\_secondary\_preshared\_key) | The pre-shared key used for the secondary VPN connection. This will be the generated key if one was not provided. |
 | <a name="output_site_location"></a> [site\_location](#output\_site\_location) | n/a |
 <!-- END_TF_DOCS -->
+

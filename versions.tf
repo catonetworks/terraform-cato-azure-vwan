@@ -5,8 +5,8 @@ terraform {
       version = "~> 4.37.0"
     }
     cato = {
-      source  = "CatoNetworks/cato"
-      version = ">= 0.0.42" # Use a version compatible with the module
+      source  = "catonetworks/cato"
+      version = ">= 0.0.70"
     }
     random = {
       source = "hashicorp/random"
@@ -16,5 +16,5 @@ terraform {
       version = "~> 2.4.0"
     }
   }
-  required_version = ">= 1.4"
+  required_version = ">= 1.5"
 }
