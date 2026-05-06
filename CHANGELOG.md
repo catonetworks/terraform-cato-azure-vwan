@@ -1,14 +1,42 @@
 # Changelog
 
-## 0.0.1 (2025-01-27)
+## 0.1.6 (2026-05-06)
+
+### Changed
+- Updated AzureRM to 4.71.0
+
+## 0.1.5 (2025-09-24)
+
+### Features 
+- Updated provider version lock to ~> 4.37.0
+
+## 0.1.4 (2025-07-18)
+
+### Features 
+- Update Site_Location
+
+## 0.1.3 (2025-07-17)
 
 ### Features
-- Initial commit 
+- Fix Malformed site_location.tf
 
-## 0.0.3 (2025-01-27)
-- Updated readme to specify clear text example param values
+## 0.1.2 (2025-07-17)
+
+- Updated
+  - Updated Site Location (v0.0.2)
+  - Version locked Cato provider to 0.0.30 or greater
+
+## 0.1.1 (2025-07-08)
+
+- Fixed 
+  - Found issue when BGP is disabled, certain variables are still required - Set these variables to optional 
+  - Found issue with Certain conditional statements when BGP is disabled - Adjusted to be correct 
+
+- Added 
+  - Added Examples for usage without BGP
 
 ## 0.1.0 (2025-06-18)
+
 - Added
   - Declarative Approach: The module is now fully declarative, removing all local-exec provisioners for Azure resources.
   - Prerequisite Data Sources: The module now requires a pre-existing Azure Resource Group, Virtual WAN, and Virtual Hub, which it looks up using data sources for a more stable and predictable workflow.
@@ -29,31 +57,11 @@
   - Refactored BGP Peer Configuration: The cato_bgp_peer resources have been updated to use the latest, more detailed attribute schema.
   - Default Cipher Update: Changed the default IKE/IPsec cipher to AES_GCM_256 to align with best practices for connections over 100Mbps.
 
-## 0.1.1 (2025-07-08)
-- Fixed 
-  - Found issue when BGP is disabled, certain variables are still required - Set these variables to optional 
-  - Found issue with Certain conditional statements when BGP is disabled - Adjusted to be correct 
+## 0.0.3 (2025-01-27)
 
-- Added 
-  - Added Examples for usage without BGP 
+- Updated readme to specify clear text example param values
 
-## 0.1.2 (2025-07-17)
-- Updated
-  - Updated Site Location (v0.0.2)
-  - Version locked Cato provider to 0.0.30 or greater
-
-## 0.1.3 (2025-07-17)
+## 0.0.1 (2025-01-27)
 
 ### Features
-- Fix Malformed site_location.tf
-
-
-## 0.1.4 (2025-07-18)
-
-### Features 
-- Update Site_Location
-
-## 0.1.5 (2025-09-24)
-
-### Features 
-- Updated provider version lock to ~> 4.37.0
+- Initial commit
