@@ -31,6 +31,12 @@ variable "azure_hub_name" {
   type        = string
 }
 
+variable "azure_hub_id" {
+  description = "Optional Virtual Hub ID with the exact casing returned by the VPN gateway's virtualHub.id. Use to avoid casing-only gateway replacement. Must identify the hub selected by azure_hub_name and azure_resource_group_name."
+  type        = string
+  default     = null
+}
+
 variable "tags" {
   description = "A map of tags to apply to all taggable Azure resources."
   type        = map(string)

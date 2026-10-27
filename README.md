@@ -10,6 +10,57 @@ This Terraform module provisions an IPSec connection between CATO Cloud and Azur
 
 The Cato vWAN relies on an [Azure Resource Group](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/resource_group), [Azure Virtual WAN](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/virtual_wan) and [Azure Virtual Hub](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/virtual_hub) to be created outside of the module call.  This is called out in the example below.
 
+## Troubleshooting: gateway replacement after an unchanged apply
+
+If the next plan replaces `azurerm_vpn_gateway.cato_vpn_gateway`, inspect the
+attribute marked `# forces replacement`. A difference such as
+`resourceGroups/lab-VWAN-rg` -> `resourceGroups/lab-vWAN-rg` in `virtual_hub_id`
+identifies a casing-only mismatch, rather than a different Azure hub.
+
+Azure names are [case-insensitive and API responses can change their casing](https://learn.microsoft.com/en-us/azure/azure-resource-manager/management/resource-name-rules).
+In [AzureRM 4.71.0](https://github.com/hashicorp/terraform-provider-azurerm/blob/v4.71.0/internal/services/network/vpn_gateway_resource.go),
+`virtual_hub_id` requires replacement and has no case-insensitive diff suppression.
+The hub data source constructs its ID from lookup names, whereas gateway refresh
+stores Azure's returned `properties.virtualHub.id`. These can differ in casing.
+Replacing the gateway then makes its ID and public IPs unknown, which cascades
+into connection replacement and changes to the Cato site's tunnel IPs.
+
+For an existing deployment, set the optional `azure_hub_id` module input to the
+**old value on the left side** of that plan's `virtual_hub_id` diff, preserving its
+exact casing. You can also read it directly from Azure:
+
+```sh
+az resource show --ids '<VPN gateway resource ID>' \
+  --api-version 2024-05-01 --query properties.virtualHub.id --output tsv
+```
+
+Add the returned hub ID inside the existing module call, for example:
+
+```hcl
+azure_hub_id = "/subscriptions/<subscription-id>/resourceGroups/lab-VWAN-rg/providers/Microsoft.Network/virtualHubs/lab-vWAN-hub"
+```
+
+The override must identify the same hub as the module's name-based lookup;
+the module checks this case-insensitively and rejects a different resource.
+Leaving it unset preserves the existing lookup behavior. Genuine hub changes
+still require gateway replacement; update or remove the override when changing
+the selected hub. Lowercasing the ID alone does not solve this issue because
+gateway refresh can return mixed case again.
+
+After selecting the module version or local source containing this fix, run
+`terraform init` to load it, then create a **new** `terraform plan`. The casing-only
+gateway replacement and its dependent connection replacement should disappear.
+Review any remaining differences separately, including shared-key or routing
+updates. Do not apply the previous saved replacement plan. This workaround does
+not require an apply, import, state edit, or gateway rebuild to take effect.
+
+### Offline regression checks
+
+With Terraform 1.7 or newer, run `terraform init -backend=false` and
+`terraform test -filter=tests/hub_id.tftest.hcl`. The tests mock every provider and
+scope their plans to the gateway and hub lookup; they do not contact Azure or CMA
+or execute the API provisioners. These checks do not replace a full lab plan.
+
 ## Timing Requirements
 
 The Creation / Destruction of vWan Hubs, and VPN Gateways can take a considerable amount of time.  Depending on the amount of connections created (typically 2 connection, per hub) the module can take up to an hour to run.  It may take considerably longer if multiple module calls are defined (used for multiple regions - Example Below).
@@ -478,6 +529,7 @@ No modules.
 | Name | Description | Type | Default | Required |
 | ---- | ----------- | ---- | ------- | :------: |
 | <a name="input_azure_asn"></a> [azure\_asn](#input\_azure\_asn) | The BGP ASN for the Azure VPN Gateway. | `number` | `65515` | no |
+| <a name="input_azure_hub_id"></a> [azure\_hub\_id](#input\_azure\_hub\_id) | Optional hub ID preserving the exact casing returned by the VPN gateway. Must identify the same hub as the name-based lookup. | `string` | `null` | no |
 | <a name="input_azure_bgp_peer_weight"></a> [azure\_bgp\_peer\_weight](#input\_azure\_bgp\_peer\_weight) | The BGP peer weight for the Azure VPN Gateway. | `number` | `0` | no |
 | <a name="input_azure_hub_name"></a> [azure\_hub\_name](#input\_azure\_hub\_name) | The name of the existing Azure Virtual Hub. | `string` | n/a | yes |
 | <a name="input_azure_ipsec_dh_group"></a> [azure\_ipsec\_dh\_group](#input\_azure\_ipsec\_dh\_group) | The DH Group used in IKE Phase 1 for initial SA on the Azure side. | `string` | `"DHGroup14"` | no |

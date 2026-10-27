@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+- Added optional `azure_hub_id` to preserve the VPN gateway's returned hub ID casing and avoid casing-only gateway and connection replacement. A case-insensitive identity check rejects overrides targeting a different hub.
+- Added mocked plan regression checks and recovery instructions for existing deployments.
+
 ## 0.1.6 (2026-05-06)
 
 ### Changed

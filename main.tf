@@ -19,12 +19,21 @@ resource "random_password" "shared_key_secondary" {
 }
 
 # Define the VPN Gateway in the Azure VWAN Hub.
+# Azure may return different ID casing on gateway refresh than the hub lookup.
 resource "azurerm_vpn_gateway" "cato_vpn_gateway" {
   name                = var.custom_vpn_gateway_name == null ? "${var.site_name}-azure-vpn-gateway" : var.custom_vpn_gateway_name
   location            = data.azurerm_virtual_hub.hub.location
   resource_group_name = data.azurerm_resource_group.rg.name
-  virtual_hub_id      = data.azurerm_virtual_hub.hub.id
+  virtual_hub_id      = var.azure_hub_id == null ? data.azurerm_virtual_hub.hub.id : var.azure_hub_id
   tags                = var.tags
+
+  lifecycle {
+    precondition {
+      condition     = var.azure_hub_id == null ? true : lower(var.azure_hub_id) == lower(data.azurerm_virtual_hub.hub.id)
+      error_message = "azure_hub_id must identify the hub selected by azure_hub_name and azure_resource_group_name; only casing differences are allowed."
+    }
+  }
+
   dynamic "bgp_settings" {
     for_each = var.bgp_enabled ? [1] : []
     content {
